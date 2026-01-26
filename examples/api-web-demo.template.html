@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CalcPlot - Web API Demo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8fafc;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .demo-section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      button {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      button:hover {
+        background: #2563eb;
+      }
+
+      .calcplot {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        margin: 10px 0;
+        min-height: 200px;
+      }
+
+      .demo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      
+      .demo-content {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .visualization {
+        min-height: 400px;
+      }
+      
+      .code-block {
+        background: #2d3748;
+        color: #e2e8f0;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 20px;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin-bottom: 20px;
+      }
+      
+      .code-block .keyword { color: #c792ea; font-weight: bold; }
+      .code-block .string { color: #c3e88d; }
+      .code-block .number { color: #f78c6c; }
+      .code-block .comment { color: #546e7a; font-style: italic; }
+      .code-block .boolean { color: #82aaff; }
+      
+      @media (max-width: 1024px) {
+        .demo-content {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚀 CalcPlot - Web API Demo</h1>
+      <p>Interactive physics simulations in the browser</p>
+    </div>
+
+    <div class="demo-container">
+      <!-- Show Demo -->
+      <div class="demo-section">
+        <div class="demo-header">
+          <h2>1. Simple Visualization</h2>
+        </div>
+        <div class="demo-content">
+          <div class="code-block" id="show-code"></div>
+          <div class="visualization">
+            <div id="show-target"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Explore Demo -->
+      <div class="demo-section">
+        <div class="demo-header">
+          <h2>2. Interactive Exploration</h2>
+        </div>
+        <div class="demo-content">
+          <div class="code-block" id="explore-code"></div>
+          <div class="visualization">
+            <div id="explore-target"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compare Demo -->
+      <div class="demo-section">
+        <div class="demo-header">
+          <h2>3. Simulation Comparison</h2>
+        </div>
+        <div class="demo-content">
+          <div class="code-block" id="compare-code"></div>
+          <div class="visualization">
+            <div id="compare-target"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Library Bundle (will be inlined during build) -->
+    <script>
+{{ LIBRARY_BUNDLE }}
+    </script>
+
+    <!-- Client Bundle (will be inlined during build) -->
+    <script data-calcplot-client>
+{{ CLIENT_BUNDLE }}
+    </script>
+
+    <script>
+      // Use global CalcPlot object
+      const { defineIVP, simulate, show, explore, compare, view, slider, plot } = window.CalcPlot;
+
+      // Simple syntax highlighting
+      function highlightCode(code) {
+        if (window.Prism && window.Prism.languages.javascript) {
+          return Prism.highlight(code, Prism.languages.javascript, 'javascript');
+        } else {
+          // Fallback: simple syntax highlighting
+          return code
+            .replace(/\b(const|let|var|function|return|if|else|for|while|await|async|new|try|catch|throw|class|extends|import|export|from|default)\b/g, '<span class="keyword">$1</span>')
+            .replace(/\b(true|false|null|undefined)\b/g, '<span class="boolean">$1</span>')
+            .replace(/\b(\d+\.?\d*)\b/g, '<span class="number">$1</span>')
+            .replace(/(['"])([^'"]*)\1/g, '<span class="string">$1$2$1</span>')
+            .replace(/\/\/.*$/gm, '<span class="comment">$&</span>')
+            .replace(/\/\*[\s\S]*?\*\//g, '<span class="comment">$&</span>');
+        }
+      }
+
+      // Shared code variables
+      let showCode, exploreCode, compareCode;
+
+      // Show code for Show Demo
+      function showShowCode() {
+        showCode = `{{ SHOW_CODE }}`;
+        document.getElementById('show-code').innerHTML = highlightCode(showCode);
+      }
+
+      // Show code for Explore Demo
+      function showExploreCode() {
+        exploreCode = `{{ EXPLORE_CODE }}`;
+        document.getElementById('explore-code').innerHTML = highlightCode(exploreCode);
+      }
+
+      // Show code for Compare Demo
+      function showCompareCode() {
+        compareCode = `{{ COMPARE_CODE }}`;
+        document.getElementById('compare-code').innerHTML = highlightCode(compareCode);
+      }
+
+      // Demo execution functions
+      window.runShowDemo = async function () {
+        try {
+          document.getElementById('show-target').innerHTML = '';
+          const result = eval('(async () => { ' + showCode + ' })');
+          await result();
+        } catch (error) {
+          document.getElementById('show-target').innerHTML = 
+            `<div style="color: #f56565; padding: 20px; font-family: monospace;">Error: ${error.message}</div>`;
+        }
+      };
+
+      window.runExploreDemo = async function () {
+        try {
+          document.getElementById('explore-target').innerHTML = '';
+          const result = eval('(async () => { ' + exploreCode + ' })');
+          await result();
+        } catch (error) {
+          document.getElementById('explore-target').innerHTML = 
+            `<div style="color: #f56565; padding: 20px; font-family: monospace;">Error: ${error.message}</div>`;
+        }
+      };
+
+      window.runCompareDemo = async function () {
+        try {
+          document.getElementById('compare-target').innerHTML = '';
+          const result = eval('(async () => { ' + compareCode + ' })');
+          await result();
+        } catch (error) {
+          document.getElementById('compare-target').innerHTML = 
+            `<div style="color: #f56565; padding: 20px; font-family: monospace;">Error: ${error.message}</div>`;
+        }
+      };
+
+      // Auto-run on page load
+      window.addEventListener('load', async function() {
+        // Load code with highlighting
+        showShowCode();
+        showExploreCode();
+        showCompareCode();
+        
+        // Run demos
+        runShowDemo();
+        runExploreDemo();
+        runCompareDemo();
+      });
+    </script>
+  </body>
+</html>

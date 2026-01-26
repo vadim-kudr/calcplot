@@ -1,0 +1,63 @@
+{
+  "name": "calcplot",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "CalcPlot - Interactive calculation and plotting library for mathematical visualization",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node build.js",
+    "build:watch": "node build.js --watch",
+    "build:verbose": "node build.js --verbose",
+    "test": "vitest --no-watch",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src/**/*.ts tests/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts tests/**/*.ts --fix",
+    "format": "prettier --write examples/**/*.js src/**/*.ts tests/**/*.ts",
+    "format:check": "prettier --check examples/**/*.js src/**/*.ts tests/**/*.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "calcplot",
+    "calculation",
+    "plotting",
+    "visualization",
+    "math",
+    "graphing",
+    "interactive",
+    "typescript",
+    "numerical-methods",
+    "simulation",
+    "ivp",
+    "ode"
+  ],
+  "author": "Vadim Kudriavtsev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vadim-kudr/calcplot.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jsdom": "^27.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-riot": "^0.1.8",
+    "jsdom": "^27.4.0",
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.18"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ]
+}
