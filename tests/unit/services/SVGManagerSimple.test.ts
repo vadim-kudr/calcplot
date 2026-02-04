@@ -6,7 +6,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // Mock D3ScaleFactory instead of full D3
-vi.mock('../../../src/runtime/client/utils/D3ScaleFactory', () => ({
+vi.mock('../../../src/visualisation/plots/utils/D3ScaleFactory', () => ({
   D3ScaleFactory: {
     createScales: vi.fn(() => ({
       xScale: { domain: vi.fn(), range: vi.fn() },
@@ -20,13 +20,13 @@ vi.mock('../../../src/runtime/client/utils/D3ScaleFactory', () => ({
 describe('SVGManager (Simple)', () => {
   test('should import SVGManager class', () => {
     expect(async () => {
-      const { SVGManager } = await import('../../../src/runtime/client/services');
+      const { SVGManager } = await import('../../../src/visualization/plots/services');
       expect(SVGManager).toBeDefined();
     }).not.toThrow();
   });
 
   test('should have expected methods', async () => {
-    const { SVGManager } = await import('../../../src/runtime/client/services');
+    const { SVGManager } = await import('../../../src/visualization/plots/services');
     
     const mockContainer = {
       appendChild: vi.fn(),
@@ -57,7 +57,7 @@ describe('SVGManager (Simple)', () => {
   });
 
   test('should handle default options', async () => {
-    const { SVGManager } = await import('../../../src/runtime/client/services');
+    const { SVGManager } = await import('../../../src/visualization/plots/services');
     
     const mockContainer = {
       appendChild: vi.fn(),

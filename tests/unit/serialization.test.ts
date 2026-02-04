@@ -13,7 +13,7 @@ import {
   deserializeFunctions,
   deserializeEvents,
   serializeEvents
-} from '../../src/runtime/serialization';
+} from '../../src/simulation/serialization';
 
 describe('FunctionSerializer - Parsing Different Function Formats', () => {
   test.each([

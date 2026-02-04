@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, vi } from 'vitest';
-import { ViewBuilder, view } from '../../src/ui/ViewBuilder';
+import { ViewBuilder, view } from '../../src/lib/builders/ViewBuilder';
 import { Timeline } from '../../src/core/ivp';
 
 describe('ViewBuilder - Core Visualization API', () => {

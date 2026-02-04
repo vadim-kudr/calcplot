@@ -7,8 +7,9 @@
 import { describe, test, expect } from 'vitest';
 import { defineIVP } from '../../src/core/ivp';
 import { simulate } from '../../src/core/simulate';
-import { view } from '../../src/ui/ViewBuilder';
-import { explore, show } from '../../src/api';
+import { view } from '../../src/lib/builders/ViewBuilder';
+import { explore } from '../../src/lib/explore';
+import { show } from '../../src/lib/show';
 
 describe('Integration: Real-World Simulation Scenarios', () => {
   

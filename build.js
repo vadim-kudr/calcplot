@@ -31,10 +31,10 @@ Options:
 
 // Build configs
 const configs = [
-  { entryPoints: ['src/index.ts'], outfile: './dist/calcplot.js', format: 'iife', globalName: 'CalcPlot' },
-  { entryPoints: ['src/runtime/client-bundle.ts'], outfile: './dist/calcplot-client.js', format: 'iife', globalName: 'CalcPlotClient' },
-  { entryPoints: ['src/runtime/client-bundle.ts'], outfile: './dist/calcplot-client-deno.js', format: 'esm', platform: 'neutral' },
-  { entryPoints: ['src/index.ts'], outfile: './dist/index.js', format: 'esm', platform: 'neutral' }
+  { entryPoints: ['src/lib/index.ts'], outfile: './dist/calcplot.js', format: 'iife', globalName: 'CalcPlot' },
+  { entryPoints: ['src/client/client-bundle.ts'], outfile: './dist/calcplot-client.js', format: 'iife', globalName: 'CalcPlotClient' },
+  { entryPoints: ['src/client/client-bundle.ts'], outfile: './dist/calcplot-client-deno.js', format: 'esm', platform: 'neutral' },
+  { entryPoints: ['src/lib/index.ts'], outfile: './dist/index.js', format: 'esm', platform: 'neutral' }
 ].map(config => ({
   ...config,
   bundle: true,
@@ -112,15 +112,34 @@ function startServer(port = '8080') {
     console.log(`⏹️  Press Ctrl+C to stop`);
   });
 
-  process.on('SIGINT', () => {
-    console.log('\n👋 Shutting down server...');
-    server.close(() => {
-      console.log('✅ Server stopped');
-      process.exit(0);
-    });
-  });
-
+  
   return server;
+}
+
+// Build library function
+async function buildLibrary() {
+  const contexts = await Promise.all(configs.map(config => {
+    if (isVerbose) console.log(`  → ${config.entryPoints[0]} → ${config.outfile}`);
+    return esbuild.context(config);
+  }));
+
+  if (isWatch) {
+    console.log('👀 Watching library... (Ctrl+C to stop)');
+    await Promise.all(contexts.map(ctx => ctx.watch()));
+  } else {
+    await Promise.all(contexts.map(ctx => ctx.rebuild()));
+    console.log(`✅ Library built in ${((Date.now() - Date.now()) / 1000).toFixed(2)}s`);
+    console.log('📦 Files:', configs.map(c => c.outfile).join(', '));
+  }
+  
+  return contexts;
+}
+
+// Build examples bundle function
+async function buildExamplesBundle() {
+  // Build examples
+  const exampleBuilder = new ExampleBuilder();
+  await exampleBuilder.build();
 }
 
 // Build function
@@ -128,26 +147,40 @@ async function build() {
   const start = Date.now();
   if (!fs.existsSync('./dist')) fs.mkdirSync('./dist', { recursive: true });
   
-  if (!isExamplesOnly) {
-    console.log('🔨 Building library...');
+  // Build examples bundle
+  if (isExamplesOnly) {
+    await buildExamplesBundle();
+    
+    // Start server if serving
+    if (isServe) {
+      const server = startServer(port);
+      
+      // Handle cleanup for server
+      if (!process.listeners('SIGINT').length) {
+        process.on('SIGINT', () => {
+          console.log('\n👋 Shutting down...');
+          server.close(() => {
+            console.log('✅ Server stopped');
+            process.exit(0);
+          });
+        });
+      }
+    }
+    return;
   }
   
   // Build library
-  if (!isExamplesOnly) {
-    const contexts = await Promise.all(configs.map(config => {
-      if (isVerbose) console.log(`  → ${config.entryPoints[0]} → ${config.outfile}`);
-      return esbuild.context(config);
-    }));
-    
-    if (isWatch) {
-      console.log('👀 Watching library... (Ctrl+C to stop)');
-      await Promise.all(contexts.map(ctx => ctx.watch()));
-    } else {
-      await Promise.all(contexts.map(ctx => ctx.rebuild()));
-      await Promise.all(contexts.map(ctx => ctx.dispose()));
-      console.log(`✅ Library built in ${((Date.now() - start) / 1000).toFixed(2)}s`);
-      console.log('📦 Files:', configs.map(c => c.outfile).join(', '));
-    }
+  let contexts;
+  contexts = await buildLibrary();
+  
+  if (isWatch) {
+    console.log('👀 Watching library... (Ctrl+C to stop)');
+    await Promise.all(contexts.map(ctx => ctx.watch()));
+  } else {
+    await Promise.all(contexts.map(ctx => ctx.rebuild()));
+    await Promise.all(contexts.map(ctx => ctx.dispose()));
+    console.log(`✅ Library built in ${((Date.now() - start) / 1000).toFixed(2)}s`);
+    console.log('📦 Files:', configs.map(c => c.outfile).join(', '));
   }
   
   // Build examples
@@ -155,7 +188,26 @@ async function build() {
   await exampleBuilder.build();
   
   if (isServe) {
-    startServer(port);
+    const server = startServer(port);
+    
+    // Handle cleanup for both server and esbuild contexts (only once)
+    if (!process.listeners('SIGINT').length) {
+      process.on('SIGINT', () => {
+        console.log('\n👋 Shutting down...');
+        server.close(() => {
+          console.log('✅ Server stopped');
+          // Clean up esbuild contexts
+          if (contexts.length > 0) {
+            Promise.all(contexts.map(ctx => ctx.dispose())).then(() => {
+              console.log('✅ Build contexts cleaned up');
+              process.exit(0);
+            });
+          } else {
+            process.exit(0);
+          }
+        });
+      });
+    }
   } else if (!isWatch) {
     console.log(`🎉 Build complete! Open dist/examples.html in your browser.`);
   }

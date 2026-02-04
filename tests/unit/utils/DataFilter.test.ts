@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { DataFilter } from '../../../src/runtime/client/utils';
+import { DataFilter } from '../../../src/visualization/plots/utils';
 
 describe('DataFilter', () => {
   describe('filterValidData', () => {

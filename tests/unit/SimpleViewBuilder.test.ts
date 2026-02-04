@@ -4,8 +4,8 @@
  */
 
 import { describe, test, expect, vi } from 'vitest';
-import { SimpleViewBuilder, scene, plot, grid, axis } from '../../src/ui/SimpleViewBuilder';
-import { ViewBuilder } from '../../src/ui/ViewBuilder';
+import { SimpleViewBuilder, scene, plot, grid, axis } from '../../src/lib/builders/SimpleViewBuilder';
+import { ViewBuilder } from '../../src/lib/builders/ViewBuilder';
 import { Timeline } from '../../src/core/ivp';
 
 // Mock ViewBuilder
@@ -16,7 +16,7 @@ const mockViewBuilderMethods = {
   axis: vi.fn()
 };
 
-vi.mock('../../src/ui/ViewBuilder', () => ({
+vi.mock('../../src/lib/builders/ViewBuilder', () => ({
   ViewBuilder: class MockViewBuilder {
     constructor(timeline: any) {
       return mockViewBuilderMethods;

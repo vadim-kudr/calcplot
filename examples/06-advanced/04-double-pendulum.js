@@ -21,10 +21,6 @@ const model = defineIVP({
     omega2: 0          // Second pendulum angular velocity
   },
   params: { 
-    L1: 1,      // First pendulum length
-    L2: 1,      // Second pendulum length
-    m1: 1,      // First pendulum mass
-    m2: 1,      // Second pendulum mass
     g: 9.81     // Gravity
   },
   derivatives: {
@@ -53,7 +49,6 @@ const model = defineIVP({
   }
 });
 
-// Interactive exploration with chaos
 explore(model, {
   params: {
     L1: slider(0.5, 2, 1, 'Pendulum 1 Length (m)'),

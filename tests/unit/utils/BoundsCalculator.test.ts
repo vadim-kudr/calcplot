@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, vi } from 'vitest';
-import { BoundsCalculator } from '../../../src/runtime/client/utils';
+import { BoundsCalculator } from '../../../src/visualization/plots/utils';
 
 describe('BoundsCalculator', () => {
   describe('calculateBoundsFromTimeline', () => {

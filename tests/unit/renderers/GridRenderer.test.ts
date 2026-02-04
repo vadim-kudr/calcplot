@@ -4,8 +4,8 @@
  */
 
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { GridRenderer } from '../../../src/runtime/client/renderers';
-import type { RenderContext } from '../../../src/runtime/client/interfaces';
+import { GridRenderer } from '../../../src/visualization/plots/renderers';
+import type { RenderContext } from '../../../src/visualization/plots/interfaces/RenderContext';
 
 // Mock D3
 vi.mock('d3', () => ({

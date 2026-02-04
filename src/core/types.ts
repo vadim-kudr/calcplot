@@ -3,6 +3,8 @@
  * CalcPlot visualization descriptors
  */
 
+import { Control } from '../lib/controls';
+
 export interface ViewDescriptor {
   timeline: {
     times: number[];
@@ -17,7 +19,7 @@ export interface ViewDescriptor {
 export interface ExploreDescriptor {
   type: 'explore';
   model: any;
-  params: any;
+  params: any; // Keep as any for compatibility with SerializedParams
   initial: string;
   views: {
     view: string;

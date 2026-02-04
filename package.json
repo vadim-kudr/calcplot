@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "description": "CalcPlot - Interactive calculation and plotting library for mathematical visualization",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
   "scripts": {
     "build": "node build.js --no-watch",
     "dev": "node build.js --serve",
@@ -42,8 +42,10 @@
   "license": "MIT",
   "devDependencies": {
     "@types/d3": "^7.4.3",
+    "@types/handlebars": "^4.0.40",
     "@types/jsdom": "^27.0.0",
     "@types/node": "^20.0.0",
+    "@types/prismjs": "^1.26.5",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "@vitest/coverage-v8": "^4.0.18",
@@ -64,5 +66,8 @@
     "dist/**/*",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "dependencies": {
+    "handlebars": "^4.7.8"
+  }
 }
