@@ -58,7 +58,6 @@ export function solve(
         activeEvents.delete(name);
       }
 
-      // Update current state and time (now at event point)
       currentState = newState ?? eventState;
       currentTime = eventTime;
       lastEventTimes.set(name, eventTime);

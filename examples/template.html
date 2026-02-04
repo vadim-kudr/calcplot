@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalcPlot Examples</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        .examples-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .example-item {
+            border-bottom: 1px solid #e1e5e9;
+        }
+        .example-item:last-child {
+            border-bottom: none;
+        }
+        .example-content {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .example-content h1,
+        .example-content h2,
+        .example-content h3 {
+            color: #2c3e50;
+            margin-top: 1rem;
+        }
+        .example-content h1 {
+            font-size: 1.5rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        .example-content h2 {
+            font-size: 1.2rem;
+        }
+        .example-content h3 {
+            font-size: 1.1rem;
+        }
+        .exec-block {
+            border-radius: 6px;
+            border: 2px dashed #cbd5e0;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        .exec-header {
+            background: #4a5568;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .exec-content {
+            padding: 0;
+        }
+        .exec-demo {
+            border: 1px dashed #cbd5e0;
+            border-radius: 4px;
+            padding: 0;
+            margin: 0;
+        }
+        .calcplot-container {
+            width: 100%;
+            background: white;
+        }
+        .exec-shadow-root {
+            width: 100%;
+            min-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            margin-top: 1rem;
+        }
+        pre[class*="language-"] {
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        pre[class*="language-"] code {
+            font-size: 0.75rem;
+        }
+        code {
+            background: #f1f3f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+        .applications {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .applications h3 {
+            margin-top: 0;
+            color: #155724;
+        }
+        .applications ul {
+            margin-bottom: 0;
+        }
+        @media (max-width: 768px) {
+            .example-content {
+                padding: 1rem;
+            }
+            header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CalcPlot Examples</h1>
+            <p>Interactive mathematical visualizations and differential equation simulations</p>
+        </header>
+        
+        <ul class="examples-list">
+            {{EXAMPLES}}
+        </ul>
+    </div>
+
+    <script type="module">
+        // Execute all demos on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            executeAllDemos();
+        });
+        
+        // Execute all demos in the page
+        async function executeAllDemos() {
+            const blocks = document.querySelectorAll('.exec-block');
+                
+            for (const block of blocks) {
+                if (block.hasAttribute('data-code-id')) {
+                    const codeId = block.getAttribute('data-code-id');
+                    const scriptElement = document.getElementById(codeId);
+                    
+                    if (scriptElement) {
+                        const code = scriptElement.textContent;
+                        
+                        try {
+                            // Create target element in main document
+                            const targetElement = document.createElement('div');
+                            targetElement.className = 'calcplot-container';
+                            targetElement.id = 'calcplot-' + codeId;
+                            targetElement.style.width = '100%';
+                            
+                            // Add target element to block
+                            block.appendChild(targetElement);
+                            
+                            // Import CalcPlot functions
+                            const { defineIVP, simulate, explore, compare, show, view, slider } = await import('./index.js');
+                            
+                            // Override functions to use shadow DOM container
+                            const originalExplore = explore;
+                            const originalCompare = compare;
+                            const originalShow = show;
+                            
+                            const wrappedExplore = function(model, options, config = {}) {
+                                const configWithTarget = { ...config, target: 'calcplot-' + codeId };
+                                return originalExplore(model, options, configWithTarget);
+                            };
+                            
+                            const wrappedCompare = function(timelines, viewBuilder, config = {}) {
+                                const configWithTarget = { ...config, target: 'calcplot-' + codeId };
+                                return originalCompare(timelines, viewBuilder, configWithTarget);
+                            };
+                            
+                            const wrappedShow = function(timeline, viewBuilder, config = {}) {
+                                const configWithTarget = { ...config, target: 'calcplot-' + codeId };
+                                return originalShow(timeline, viewBuilder, configWithTarget);
+                            };
+                            
+                            // Override global functions temporarily
+                            window.explore = wrappedExplore;
+                            window.compare = wrappedCompare;
+                            window.show = wrappedShow;
+                            
+                            // Create async function with injected functions
+                            const asyncFunction = new Function('defineIVP', 'simulate', 'explore', 'compare', 'show', 'view', 'slider', 'targetElement', 
+                                'return (async () => {' + code.replace(/import\s*\{[^}]+\}\s*from\s*['"][^'"]*['"];?\s*/g, '') + '})()'
+                            );
+                            
+                            // Execute the code with injected functions
+                            await asyncFunction(defineIVP, simulate, window.explore, window.compare, window.show, view, slider, targetElement);
+                            
+                            // Restore original functions
+                            window.explore = originalExplore;
+                            window.compare = originalCompare;
+                            window.show = originalShow;
+                        } catch (error) {
+                            demoContainer.querySelector('div').innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+                            console.error('Demo execution error:', error);
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -14,7 +14,6 @@ export function createElement(
 ): HTMLElement {
   const element = document.createElement(tag);
 
-  // Set attributes
   Object.entries(attrs).forEach(([key, val]) => {
     if (key === 'className') {
       element.className = val;
@@ -27,7 +26,6 @@ export function createElement(
     }
   });
 
-  // Append children
   children.flat().forEach((child) => {
     if (typeof child === 'string') {
       element.appendChild(document.createTextNode(child));

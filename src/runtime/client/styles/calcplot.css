@@ -1,0 +1,109 @@
+.calcplot-style {
+  font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', sans-serif;
+  background-color: white;
+  color: black;
+}
+
+.calcplot-style svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.calcplot-style .plot-group {
+  fill: none;
+  stroke-width: 1.5;
+}
+
+/* Grid lines - match old CanvasRenderer style */
+.calcplot-style .grid-line {
+  stroke: #b0b0b0;
+  stroke-width: 1.0;
+  stroke-dasharray: 2,2;
+}
+
+.calcplot-style .grid-line-x,
+.calcplot-style .grid-line-y {
+  stroke: #b0b0b0;
+  stroke-width: 1.0;
+  stroke-dasharray: 2,2;
+}
+
+.calcplot-style .minor-grid-line-x,
+.calcplot-style .minor-grid-line-y {
+  stroke: #f0f0f0;
+  stroke-width: 0.5;
+  stroke-dasharray: 1,1;
+}
+
+/* Axis lines - match old CanvasRenderer style */
+.calcplot-style .axis-line {
+  stroke: #666;
+  stroke-width: 2.0;
+}
+
+.calcplot-style .plot-frame {
+  stroke: #666;
+  stroke-width: 2.0;
+  fill: none;
+}
+
+/* Tick styles - match old CanvasRenderer colors */
+.calcplot-style .tick-text {
+  font-size: 12px;
+  fill: #666;
+  font-family: 'DejaVu Sans', sans-serif;
+}
+
+.calcplot-style .calcplot-tick-text {
+  font-size: 12px;
+  fill: #666;
+  font-family: 'DejaVu Sans', sans-serif;
+  font-weight: bold;
+}
+
+.calcplot-style .calcplot-tick-line {
+  stroke: #666;
+  stroke-width: 2.0;
+}
+
+/* Axis labels */
+.calcplot-style .axis-label {
+  font-size: 14px;
+  fill: #333;
+  font-family: 'DejaVu Sans', sans-serif;
+  font-weight: normal;
+}
+
+/* Legend */
+.calcplot-style .legend-text {
+  font-size: 12px;
+  fill: black;
+  font-family: 'DejaVu Sans', sans-serif;
+}
+
+.calcplot-style .legend-background {
+  fill: white;
+  stroke: #666;
+  stroke-width: 1.0;
+}
+
+/* Title */
+.calcplot-style .title {
+  font-size: 16px;
+  fill: black;
+  font-family: 'DejaVu Sans', sans-serif;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+/* Calcplot color palette (tab10) */
+.calcplot-style .color-0 { stroke: #1f77b4; fill: #1f77b4; }
+.calcplot-style .color-1 { stroke: #ff7f0e; fill: #ff7f0e; }
+.calcplot-style .color-2 { stroke: #2ca02c; fill: #2ca02c; }
+.calcplot-style .color-3 { stroke: #d62728; fill: #d62728; }
+.calcplot-style .color-4 { stroke: #9467bd; fill: #9467bd; }
+.calcplot-style .color-5 { stroke: #8c564b; fill: #8c564b; }
+.calcplot-style .color-6 { stroke: #e377c2; fill: #e377c2; }
+.calcplot-style .color-7 { stroke: #7f7f7f; fill: #7f7f7f; }
+.calcplot-style .color-8 { stroke: #bcbd22; fill: #bcbd22; }
+.calcplot-style .color-9 { stroke: #17becf; fill: #17becf; }

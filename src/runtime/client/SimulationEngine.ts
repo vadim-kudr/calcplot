@@ -50,7 +50,7 @@ export class SimulationEngine {
       throw new Error('No derivatives found in data.model.derivatives or data.derivatives');
     }
 
-    const derivativeFns: Record<string, Function> = {};
+    const derivativeFns: Record<string, (s: any, p: any) => any> = {};
     Object.entries(derivatives).forEach(([key, fn]) => {
       derivativeFns[key] = FunctionSerializer.parseAndCreateFunction(['s', 'p'], fn as string);
     });
@@ -110,7 +110,7 @@ export class SimulationEngine {
     return { times, states };
   }
 
-  parseInitialFunction(initial: string): Function {
+  parseInitialFunction(initial: string): (p: any) => any {
     try {
       const fn = FunctionSerializer.parseAndCreateFunction(['p'], initial);
       return fn;

@@ -39,10 +39,8 @@ export class SimulationBuilder {
       throw new Error('Initial state must be set before running simulation');
     }
 
-    // Use provided params or default to empty object
-    const params = this.modelParams || this.model.params || {};
+    const params = options.params || this.modelParams || this.model.params || {};
 
-    // Default options
     const { dt = 0.01, maxTime = 10 } = options;
 
     const { times, states } = solve(this.model, this.initialState, params, { dt, maxTime });

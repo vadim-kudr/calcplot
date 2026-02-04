@@ -1,3 +1,20 @@
+# Projectile Motion with Air Resistance
+
+Compare different projectile trajectories with air resistance effects.
+
+## Mathematical Background
+
+The projectile motion model includes:
+
+- **Position**: dx/dt = vₓ, dy/dt = vᵧ
+- **Velocity**: dvₓ/dt = -drag·vₓ, dvᵧ/dt = -g - drag·vᵧ
+- **Parameters**: gravitational acceleration (g) and drag coefficient
+
+## Interactive Demo
+
+```js exec
+import { defineIVP, simulate, compare, view } from 'calcplot';
+
 const projectileModel = defineIVP({
   state: { x: 0, y: 0, vx: 0, vy: 0 },
   params: { g: 9.81, drag: 0.1 },
@@ -20,14 +37,12 @@ await compare(
   },
   view()
     .plot((s) => [s['Trajectory 1_x'], s['Trajectory 1_y']], {
-      color: '#2563eb',
       label: 'Trajectory 1'
     })
     .plot((s) => [s['Trajectory 2_x'], s['Trajectory 2_y']], {
-      color: '#dc2626',
       label: 'Trajectory 2'
     })
     .grid()
-    .axis(),
-  { target: 'compare-target' }
+    .axis()
 );
+```

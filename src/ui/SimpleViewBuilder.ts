@@ -36,7 +36,14 @@ export class SimpleViewBuilder {
     this.layers.push({
       type: 'grid',
       method: 'grid',
-      args: [options]
+      args: [options],
+      options: {
+        showGrid: true,
+        gridColor: '#e0e0e0',
+        gridOpacity: 0.3,
+        gridWidth: 0.5,
+        ...options
+      }
     });
     return this;
   }
@@ -45,7 +52,17 @@ export class SimpleViewBuilder {
     this.layers.push({
       type: 'axis',
       method: 'axis',
-      args: [options]
+      args: [options],
+      options: {
+        showTicks: true,
+        showLabels: true,
+        tickSize: 6,
+        tickPadding: 3,
+        labelPadding: 20,
+        fontSize: 12,
+        fontColor: '#333',
+        ...options
+      }
     });
     return this;
   }

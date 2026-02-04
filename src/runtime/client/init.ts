@@ -23,7 +23,9 @@ if (typeof globalThis !== 'undefined') {
 // Helper function to resolve dimensions
 function resolveDimension(value: any, container: HTMLElement, fallback: number, useClientWidth = false): number {
   if (value === 'auto' && useClientWidth) {
-    return container.clientWidth || fallback;
+    const clientWidth = container.clientWidth;
+    // If clientWidth is 0 (container not rendered yet), use fallback
+    return (clientWidth && clientWidth > 0) ? clientWidth : fallback;
   }
   if (typeof value === 'number') {
     return value;
@@ -38,7 +40,7 @@ function createControls(
   updateSimulation: () => void,
   log: (...args: any[]) => void
 ): void {
-  // Add CSS styles for control layout
+  // Add CSS styles
   const style = createElement('style', {
     textContent: `
       .calcplot-controls {
@@ -66,8 +68,7 @@ function createControls(
         margin: 0;
         vertical-align: middle;
         width: 150px;
-        padding-left: 12px;
-        padding-right: 12px;
+        padding: 0;
       }
       .control-group .value-display {
         display: table-cell;
@@ -102,7 +103,7 @@ function createControls(
         createSlider(controlsDiv, {
           id: key,
           control: param,
-          value: param.default, // Add initial value
+          value: param.default,
           onChange: (id: string, value: number) => {
             updateSimulation();
           }
@@ -140,16 +141,23 @@ function createWrapper(container: HTMLElement, width: string | number, height: s
 
 // Initialize multiple views in container
 function initializeViews(views: any[], container: HTMLElement, width: string | number, height: string | number, log: (...args: any[]) => void): ViewRenderer[] {
-  return views.map((viewData: any) => {
+  const parsedWidth = typeof width === 'number' ? width : parseInt(width) || 800;
+  const parsedHeight = typeof height === 'number' ? height : parseInt(height) || 480;
+  
+  // Calculate individual view dimensions
+  const viewWidth = Math.floor(parsedWidth / views.length);
+  const viewHeight = parsedHeight;
+  
+  return views.map((viewData: any, index: number) => {
     const viewContainer = createElement('div', {
-      style: `width: 100%; height: 100%; flex: 1;`
+      style: `width: ${viewWidth}px; height: ${viewHeight}px; flex: 1; min-width: 0;`
     });
     container.appendChild(viewContainer);
 
     return new ViewRenderer(
       viewContainer,
-      viewContainer.clientWidth,
-      viewContainer.clientHeight,
+      viewWidth,
+      viewHeight,
       log
     );
   });
@@ -158,30 +166,41 @@ function initializeViews(views: any[], container: HTMLElement, width: string | n
 // Update all views with new data
 function updateViews(renderers: ViewRenderer[], views: any[], timeline: any, params: any, width: number, height: number): void {
   const layout = { columns: views.length, rows: 1, gaps: 10 };
+  
+  // Calculate individual view dimensions
+  const viewWidth = Math.floor(width / views.length);
+  const viewHeight = height;
 
   views.forEach((viewData: any, index: number) => {
     let descriptor;
     
-    // Handle ViewBuilder layers
     if (viewData.layers && Array.isArray(viewData.layers)) {
       descriptor = {
-        timeline: {
-          times: timeline.times,
-          states: timeline.states
-        },
-        layers: viewData.layers
+        type: 'view',
+        layers: viewData.layers,
+        options: viewData.options
       };
     } else {
-      throw new Error('Invalid view configuration: expected layers array');
+      descriptor = {
+        type: 'view',
+        layers: [],
+        options: {}
+      };
     }
 
-    renderers[index].render({
-      type: 'view',
-      timeline,
-      layers: descriptor.layers,
-      width: width / layout.columns,
-      height: height / layout.rows
-    });
+    // Update renderer with correct dimensions
+    const renderer = renderers[index];
+    if (renderer) {
+      renderer.render({
+        type: 'view',
+        timeline,
+        layers: descriptor.layers,
+        viewDescriptor: descriptor,
+        options: descriptor.options,
+        width: viewWidth,
+        height: viewHeight
+      });
+    }
   });
 }
 
@@ -197,14 +216,14 @@ function initializeExplore(data: any, container: HTMLElement, log: (...args: any
     // Ensure height has units
     const heightWithUnits = typeof containerHeight === 'number' ? `${containerHeight}px` : containerHeight;
     const widthWithUnits = typeof containerWidth === 'number' ? `${containerWidth}px` : containerWidth;
-
-    // Create controls
-    if (data.params) {
-      createControls(data, container, updateSimulation, log);
-    }
-
+    
+    createControls(data, container, updateSimulation, log);
+    
     const canvasContainer = isMultiView ? createWrapper(container, widthWithUnits, heightWithUnits, 10) : container;
-    const renderers = isMultiView ? initializeViews(views, canvasContainer, widthWithUnits, heightWithUnits, log) : [new ViewRenderer(canvasContainer, parseInt(widthWithUnits) || 800, parseInt(heightWithUnits) || 480, log)];
+    const parsedWidth = parseInt(widthWithUnits) || 800;
+    const parsedHeight = parseInt(heightWithUnits) || 480;
+    
+    const renderers = isMultiView ? initializeViews(views, canvasContainer, widthWithUnits, heightWithUnits, log) : [new ViewRenderer(canvasContainer, parsedWidth, parsedHeight, log)];
 
     // Update simulation function
     function updateSimulation(): void {
@@ -212,7 +231,17 @@ function initializeExplore(data: any, container: HTMLElement, log: (...args: any
       Object.entries(data.params).forEach(([key, param]: [string, any]) => {
         const slider = document.getElementById(`input-${key}`) as HTMLInputElement;
         if (slider) {
-          currentParams[key] = parseFloat(slider.value);
+          // Use parseFloat but ensure we get the correct value
+          const value = parseFloat(slider.value);
+          // Check if value is NaN or at bounds, use default if so
+          if (isNaN(value)) {
+            currentParams[key] = param.default;
+          } else {
+            // Ensure value is within bounds
+            const min = param.min || 0;
+            const max = param.max || 1;
+            currentParams[key] = Math.max(min, Math.min(max, value));
+          }
         } else {
           currentParams[key] = param.default;
         }
@@ -276,7 +305,7 @@ function initializeShow(data: any, container: HTMLElement, log: (...args: any[])
       });
       container.appendChild(multiViewContainer);
 
-      // Create renderers for each view
+      // Create renderers
       views.forEach((viewData: any) => {
         const viewContainer = createElement('div', {
           style: `flex: 1 1 calc(50% - 5px); min-width: 300px; height: 100%;`
@@ -313,10 +342,18 @@ function initializeShow(data: any, container: HTMLElement, log: (...args: any[])
 function initializeCompare(data: any, container: HTMLElement, log: (...args: any[]) => void): void {
 
   try {
+    // Cleanup previous renderer if exists
+    if ((container as any)._calcplotRenderer) {
+      (container as any)._calcplotRenderer.destroy();
+    }
+    
     const renderer = new ViewRenderer(container, 
       resolveDimension(data.width, container, 800, true), 
       resolveDimension(data.height, container, 480), 
       log);
+    
+    // Save renderer reference for cleanup
+    (container as any)._calcplotRenderer = renderer;
     renderer.render(data);
   } catch (error: any) {
     log('Error in compare initialization:', error.message);

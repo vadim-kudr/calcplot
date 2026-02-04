@@ -50,14 +50,14 @@ explore(
     view: [
       // First view: position and velocity over time
       view()
-        .plot((s) => s.x, { color: 'blue', label: 'Position' })
-        .plot((s) => s.v, { color: 'red', label: 'Velocity' })
+        .plot((s) => s.x, { label: 'Position' })
+        .plot((s) => s.v, { label: 'Velocity' })
         .grid()
         .axis({ xLabel: 'Time (s)', yLabel: 'Value' }),
 
       // Second view: phase space
       view()
-        .plot((s) => [s.x, s.v], { color: 'purple', label: 'Phase Space' })
+        .plot((s) => [s.x, s.v], { label: 'Phase Space' })
         .grid()
         .axis({ xLabel: 'Position', yLabel: 'Velocity', aspectRatio: 'equal' })
     ]

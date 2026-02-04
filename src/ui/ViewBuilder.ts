@@ -91,30 +91,6 @@ export class ViewBuilder {
   }
 
   /**
-   * Add plot layer
-   */
-  plot(selector: SelectorFunction, options: PlotOptions = {}): ViewBuilder {
-    // Detect if selector is parametric (returns [x, y]) by testing it
-    const isParametric = this.detectParametricSelector(selector);
-
-    this.layers.push({
-      type: 'plot',
-      selector: this.serializeFunction(selector),
-      parametric: isParametric,
-      options: {
-        color: '#2563eb',
-        lineWidth: 2,
-        fill: false,
-        dash: [],
-        label: '',
-        alpha: 1,
-        ...options
-      }
-    });
-    return this;
-  }
-
-  /**
    * Add vector layer
    */
   vector(at: VectorFunction, dir: VectorFunction, options: VectorOptions = {}): ViewBuilder {
@@ -143,9 +119,6 @@ export class ViewBuilder {
     return this;
   }
 
-  /**
-   * Add grid layer
-   */
   grid(options: any = {}): ViewBuilder {
     this.layers.push({
       type: 'grid',
@@ -163,6 +136,49 @@ export class ViewBuilder {
       options: options
     });
     return this;
+  }
+
+  /**
+   * Add plot layer
+   */
+  plot(selector: SelectorFunction, options: PlotOptions = {}): ViewBuilder {
+    const calcplotColors = [
+      '#1f77b4', // blue
+      '#ff7f0e', // orange
+      '#2ca02c', // green
+      '#d62728', // red
+      '#9467bd', // purple
+      '#8c564b', // brown
+      '#e377c2', // pink
+      '#7f7f7f', // gray
+      '#bcbd22', // olive
+      '#17becf'  // cyan
+    ];
+
+    const isParametric = this.detectParametricSelector(selector);
+    const plotIndex = this.layers.filter(l => l.type === 'plot').length;
+
+    this.layers.push({
+      type: 'plot',
+      selector: this.serializeFunction(selector),
+      parametric: isParametric,
+      options: {
+        color: options.color || calcplotColors[plotIndex % calcplotColors.length],
+        lineWidth: 1.5,
+        opacity: 1,
+        dash: [],
+        label: '',
+        ...options
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add default grid and axes (calcplot-style defaults)
+   */
+  defaults(): ViewBuilder {
+    return this.grid().axis();
   }
 
   /**
