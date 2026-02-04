@@ -59,8 +59,6 @@ export class SVGManager {
     // Then create SVG elements
     this.svg = this.createSVG();
     this.g = this.svg.append('g');
-    
-    this.aspectRatio = options.aspectRatio;
   }
 
   private createSVG(): d3.Selection<SVGSVGElement, unknown, null, undefined> {
@@ -78,7 +76,13 @@ export class SVGManager {
       xScale: this.scales.x, // Never undefined
       yScale: this.scales.y, // Never undefined
       width: this.dimensions.width,
-      height: this.dimensions.height
+      height: this.dimensions.height,
+      margins: {
+        top: 20,
+        right: 20,
+        bottom: 40,
+        left: 60
+      }
     };
   }
 

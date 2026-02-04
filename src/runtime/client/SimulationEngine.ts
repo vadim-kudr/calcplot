@@ -32,7 +32,7 @@ export class SimulationEngine {
     const exploreParams = params || {};
     const allParams = { ...modelParams, ...exploreParams };
 
-    const { dt = 0.01, maxTime = 10 } = data.options || {};
+    const { timeRange = [0, 10], timeStep = 0.01 } = data.options || {};
     const times = [];
     const states: Record<string, number[]> = {};
 
@@ -42,7 +42,7 @@ export class SimulationEngine {
     });
 
     let state = { ...initialState };
-    let t = 0;
+    let t = timeRange[0];
 
     // Parse derivative functions from model
     const derivatives = data.model?.derivatives || data.derivatives;
@@ -63,7 +63,7 @@ export class SimulationEngine {
       eventFns = events;
     }
 
-    while (t <= maxTime) {
+    while (t <= timeRange[1]) {
       // Check events before storing state
       let shouldStop = false;
       if (events && Object.keys(eventFns).length > 0) {
@@ -100,11 +100,11 @@ export class SimulationEngine {
       // Update state
       Object.keys(state).forEach((key) => {
         if (derivatives2[key] !== undefined) {
-          state[key] += derivatives2[key] * dt;
+          state[key] += derivatives2[key] * timeStep;
         }
       });
 
-      t += dt;
+      t += timeStep;
     }
 
     return { times, states };

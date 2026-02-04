@@ -4,6 +4,8 @@
 
 import { State, Timeline } from '../core/ivp';
 
+import { AxisOptions } from '../runtime/client/renderers/AxisRenderer';
+
 export interface GridOptions {
   color?: string;
   alpha?: number;
@@ -14,6 +16,48 @@ export interface PlotOptions {
   color?: string;
   lineWidth?: number;
   dash?: number[];
+  label?: string;
+  alpha?: number;
+}
+
+export interface FillOptions {
+  color?: string;
+  alpha?: number;
+}
+
+export interface RefLineOptions {
+  color?: string;
+  linestyle?: 'solid' | 'dashed' | 'dotted';
+  linewidth?: number;
+  label?: string;
+}
+
+export interface LegendOptions {
+  loc?: 'upper right' | 'upper left' | 'lower right' | 'lower left' | 'center';
+  frame?: boolean;
+  alpha?: number;
+}
+
+export interface VectorFieldOptions {
+  gridSize?: number;
+  color?: string;
+  alpha?: number;
+  normalize?: boolean;
+  scale?: number;
+}
+
+export interface PoincareOptions {
+  section: (state: State) => boolean;    // Section condition
+  direction?: 'positive' | 'negative' | 'both';  // Crossing direction
+  marker?: string;                    // Marker style ('circle' | 'cross')
+  color?: string;                      // Color
+  size?: number;                       // Marker size
+}
+
+export interface NullclineOptions {
+  color?: string;
+  linestyle?: 'solid' | 'dashed' | 'dotted';
+  linewidth?: number;
   label?: string;
 }
 
@@ -61,7 +105,7 @@ export interface DrawContext {
 }
 
 export interface Layer {
-  type: 'grid' | 'scene' | 'plot' | 'vector' | 'bounds' | 'axis';
+  type: 'grid' | 'scene' | 'plot' | 'vector' | 'bounds' | 'axis' | 'fill' | 'refline' | 'title' | 'legend' | 'vectorField' | 'nullcline' | 'poincare';
   options?: any;
   draw?: string; // serialized function
   selector?: string; // serialized function
@@ -130,7 +174,7 @@ export class ViewBuilder {
   /**
    * Add axis layer
    */
-  axis(options: any = {}): ViewBuilder {
+  axis(options: AxisOptions = {}): ViewBuilder {
     this.layers.push({
       type: 'axis',
       options: options
@@ -169,6 +213,147 @@ export class ViewBuilder {
         dash: [],
         label: '',
         ...options
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add phase portrait layer (alias for parametric plot)
+   */
+  phase(selector: (state: State) => [number, number], options: PlotOptions = {}): ViewBuilder {
+    return this.plot(selector, {
+      color: '#d62728', // red for phase portraits
+      lineWidth: 2,
+      ...options
+    });
+  }
+
+  /**
+   * Fill region where condition is true
+   */
+  fill(predicate: (state: State) => boolean, options: FillOptions = {}): ViewBuilder {
+    this.layers.push({
+      type: 'fill',
+      selector: this.serializeFunction(predicate),
+      options: {
+        color: options.color || 'blue',
+        alpha: options.alpha || 0.2
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add horizontal reference line
+   */
+  axhline(y: number, options: RefLineOptions = {}): ViewBuilder {
+    this.layers.push({
+      type: 'refline',
+      options: {
+        orientation: 'horizontal',
+        value: y,
+        color: options.color || 'gray',
+        linestyle: options.linestyle || 'solid',
+        linewidth: options.linewidth || 1,
+        label: options.label || ''
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add vertical reference line
+   */
+  axvline(x: number, options: RefLineOptions = {}): ViewBuilder {
+    this.layers.push({
+      type: 'refline',
+      options: {
+        orientation: 'vertical',
+        value: x,
+        color: options.color || 'gray',
+        linestyle: options.linestyle || 'solid',
+        linewidth: options.linewidth || 1,
+        label: options.label || ''
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Set plot title
+   */
+  title(text: string): ViewBuilder {
+    this.layers.push({
+      type: 'title',
+      options: { text }
+    });
+    return this;
+  }
+
+  /**
+   * Add legend
+   */
+  legend(options: LegendOptions = {}): ViewBuilder {
+    this.layers.push({
+      type: 'legend',
+      options: {
+        loc: options.loc || 'upper right',
+        frame: options.frame !== false,
+        alpha: options.alpha || 1
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add vector field
+   */
+  vectorField(vectorFn: (state: State, params: any) => { dx: number; dy: number }, options: VectorFieldOptions = {}): ViewBuilder {
+    this.layers.push({
+      type: 'vectorField',
+      selector: this.serializeFunction(vectorFn),
+      options: {
+        gridSize: options.gridSize || 20,
+        color: options.color || 'gray',
+        alpha: options.alpha || 0.6,
+        normalize: options.normalize !== false,
+        scale: options.scale || 1
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add nullcline
+   */
+  nullcline(variable: string, options: NullclineOptions = {}): ViewBuilder {
+    this.layers.push({
+      type: 'nullcline',
+      options: {
+        variable,
+        color: options.color || 'blue',
+        linestyle: options.linestyle || 'dashed',
+        linewidth: options.linewidth || 1,
+        label: options.label || ''
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Add Poincaré section
+   */
+  poincare(section: (state: State) => boolean, options: PoincareOptions = { section: () => false }): ViewBuilder {
+    this.layers.push({
+      type: 'poincare',
+      selector: this.serializeFunction(section),
+      options: {
+        section: section, // Keep original function for reference
+        direction: options.direction || 'positive',
+        marker: options.marker || 'circle',
+        color: options.color || 'red',
+        size: options.size || 4
       }
     });
     return this;

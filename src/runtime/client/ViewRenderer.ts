@@ -83,7 +83,8 @@ export class ViewRenderer {
     isCalcplotStylesLoading = true;
 
     // Import CSS dynamically as text
-    import('./styles/calcplot.css').then((cssModule) => {
+    // @ts-ignore - CSS module import
+    import('./styles/calcplot.css').then((cssModule: any) => {
       let cssText = cssModule.default || cssModule;
       
       // Handle case where CSS is imported as object
@@ -271,9 +272,9 @@ export class ViewRenderer {
       });
     }
 
-    // Define rendering order: axis -> grid -> plot -> legend
-    // Axis first to calculate proper margins, then others
-    const renderOrder = ['axis', 'grid', 'plot', 'legend'];
+    // Define rendering order: title -> axis -> grid -> vectorField -> nullcline -> fill -> plot -> refline -> poincare -> legend
+    // Title first, then axis/grid for layout, then data layers, finally overlays
+    const renderOrder = ['title', 'axis', 'grid', 'vectorField', 'nullcline', 'fill', 'plot', 'refline', 'poincare', 'legend'];
     
     // Render each layer type in the correct order
     for (const layerType of renderOrder) {

@@ -32,9 +32,10 @@ export interface Model {
 }
 
 export interface SimulationOptions {
-  dt?: number;
-  maxTime?: number;
+  timeRange?: [number, number];
+  timeStep?: number;
   tolerance?: number;
+  params?: Params;
 }
 
 export interface Timeline {

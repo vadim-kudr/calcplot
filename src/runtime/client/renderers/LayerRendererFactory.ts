@@ -9,6 +9,12 @@ import { PlotRenderer } from './PlotRenderer';
 import { VectorRenderer } from './VectorRenderer';
 import { SceneRenderer } from './SceneRenderer';
 import { LegendRenderer } from './LegendRenderer';
+import { FillRenderer } from './FillRenderer';
+import { RefLineRenderer } from './RefLineRenderer';
+import { TitleRenderer } from './TitleRenderer';
+import { VectorFieldRenderer } from './VectorFieldRenderer';
+import { NullclineRenderer } from './NullclineRenderer';
+import { PoincareRenderer } from './PoincareRenderer';
 
 export class LayerRendererFactory {
   private renderers = new Map<string, LayerRenderer>();
@@ -27,6 +33,12 @@ export class LayerRendererFactory {
     this.register('vector', new VectorRenderer());
     this.register('scene', new SceneRenderer());
     this.register('legend', new LegendRenderer());
+    this.register('fill', new FillRenderer());
+    this.register('refline', new RefLineRenderer());
+    this.register('title', new TitleRenderer());
+    this.register('vectorField', new VectorFieldRenderer());
+    this.register('nullcline', new NullclineRenderer());
+    this.register('poincare', new PoincareRenderer());
   }
 
   /**

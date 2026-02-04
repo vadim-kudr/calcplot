@@ -6,6 +6,11 @@ import { Model, Params, SimulationOptions, State } from './ivp';
 import { solve } from './solver';
 import { Timeline } from './timeline';
 
+export interface SimulateConfig {
+  timeRange: [number, number];
+  timeStep?: number;
+}
+
 export class SimulationBuilder {
   private model: Model;
   private initialState?: State;
@@ -41,16 +46,36 @@ export class SimulationBuilder {
 
     const params = options.params || this.modelParams || this.model.params || {};
 
-    const { dt = 0.01, maxTime = 10 } = options;
+    const { timeRange = [0, 10], timeStep = 0.01 } = options;
 
-    const { times, states } = solve(this.model, this.initialState, params, { dt, maxTime });
+    const { times, states } = solve(this.model, this.initialState, params, options);
     return new Timeline(times, states);
   }
 }
 
 /**
- * Main simulation function
+ * Simulation function with overloads
  */
-export function simulate(model: Model): SimulationBuilder {
-  return new SimulationBuilder(model);
+
+// Overload 1: Simple simulate(model, config)
+function simulate(model: Model, config: SimulateConfig): Timeline;
+
+// Overload 2: Fluent simulate(model) -> builder
+// eslint-disable-next-line no-redeclare
+function simulate(model: Model): SimulationBuilder;
+
+// Implementation
+// eslint-disable-next-line no-redeclare
+function simulate(model: Model, config?: SimulateConfig): Timeline | SimulationBuilder {
+  if (config) {    
+    const { times, states } = solve(model, model.state, model.params, config);
+    
+    return new Timeline(times, states);
+  } else {
+    // Fluent simulate: simulate(model) -> builder
+    return new SimulationBuilder(model);
+  }
 }
+
+// Export the function
+export { simulate };

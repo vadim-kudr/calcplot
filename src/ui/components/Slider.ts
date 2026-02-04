@@ -3,13 +3,13 @@
  */
 
 import { div, input, label, span } from '../../utils/html-tag';
-import { Control } from '../controls';
+import { SliderControl } from '../controls';
 
 export interface SliderProps {
   id: string;
-  control: Control;
-  value?: number | boolean;
-  onChange?: (id: string, value: number | boolean) => void;
+  control: SliderControl;
+  value?: number;
+  onChange?: (id: string, value: number) => void;
 }
 
 /**
@@ -24,16 +24,17 @@ export function createSlider(container: HTMLElement, props: SliderProps): HTMLIn
       className: 'value-display',
       id: valueId
     },
-    typeof props.value === 'number' ? props.value.toFixed(2) : String(props.value)
+    typeof props.value === 'number' ? props.value.toFixed(2) : String(props.value || 0)
   );
 
+  // Create range slider
   const inputElement = input({
     type: 'range',
     id: inputId,
     min: String(props.control.min),
     max: String(props.control.max),
     step: String(props.control.step || 0.01),
-    value: String(props.value),
+    value: String(props.value || props.control.default),
     'data-slider-id': props.id
   }) as HTMLInputElement;
 

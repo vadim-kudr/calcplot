@@ -39,7 +39,7 @@ describe('Integration: Real-World Simulation Scenarios', () => {
       const timeline = simulate(ballModel)
         .initial({ y: 2.0, vy: 0.0 })
         .params({ g: 9.81, restitution: 0.75 })
-        .run({ dt: 0.01, maxTime: 3.0 });
+        .run({ timeRange: [0, 3.0], timeStep: 0.01 });
 
       const heights = timeline.states.y;
       const groundContacts = heights.filter((y: number) => Math.abs(y) < 0.01).length;
@@ -73,11 +73,11 @@ describe('Integration: Real-World Simulation Scenarios', () => {
 
       const noAir = simulate(projectileModel(0))
         .initial({ x: 0, y: 0, vx: 30, vy: 40 })
-        .run({ dt: 0.01, maxTime: 8 });
+        .run({ timeRange: [0, 8], timeStep: 0.01 });
 
       const withAir = simulate(projectileModel(0.1))
         .initial({ x: 0, y: 0, vx: 30, vy: 40 })
-        .run({ dt: 0.01, maxTime: 8 });
+        .run({ timeRange: [0, 8], timeStep: 0.01 });
 
       const noARange = Math.max(...noAir.states.x);
       const withARange = Math.max(...withAir.states.x);
@@ -109,7 +109,7 @@ describe('Integration: Real-World Simulation Scenarios', () => {
       const timeline = simulate(pendulumModel)
         .initial({ theta: 0.5, omega: 0 })
         .params({ g: 9.81, L: 1.0, damping: 0.1 })
-        .run({ dt: 0.01, maxTime: 10 });
+        .run({ timeRange: [0, 10], timeStep: 0.01 });
 
       // 🎨 Create visualizations using new API
       const phaseView = view()

@@ -20,6 +20,8 @@ export interface AxisOptions {
   labelPadding?: number;
   fontSize?: number;
   fontColor?: string;
+  tickColor?: string;
+  labelColor?: string;
   axisColor?: string;
   axisWidth?: number;
   xLabel?: string;

@@ -16,22 +16,22 @@ export function solve(
   params: Params,
   options: SimulationOptions
 ) {
-  const { dt = 0.01, maxTime = 10 } = options;
-  const times: number[] = [0];
+  const { timeRange = [0, 10], timeStep = 0.01 } = options;
+  const times: number[] = [timeRange[0]];
   const states: Record<string, number[]> = Object.fromEntries(
     Object.keys(initialState).map(k => [k, [initialState[k]]])
   );
 
   let currentState = { ...initialState };
-  let currentTime = 0;
+  let currentTime = timeRange[0];
   
   // Event management
   const activeEvents = new Set(Object.keys(model.events || {}));
   const lastEventTimes = new Map<string, number>();
 
-  while (currentTime < maxTime) {
-    // Don't exceed maxTime boundaries
-    const stepDt = Math.min(dt, maxTime - currentTime);
+  while (currentTime < timeRange[1]) {
+    // Don't exceed timeRange boundaries
+    const stepDt = Math.min(timeStep, timeRange[1] - currentTime);
     
     // 1. Trial RK4 step
     const nextState = rk4Step(model, currentState, params, stepDt);

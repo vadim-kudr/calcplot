@@ -3,32 +3,26 @@
  * For interactive investigation with parameter controls
  */
 
-import { Model } from '../core/ivp';
+import { Model, Params, State } from '../core/ivp';
 import { serializeModel, serializeParams } from '../runtime/serialization';
 import { renderToHTML } from '../utils/renderToHTML';
 import { displayHTML } from '../utils/displayHTML';
 import { loadClientBundle } from '../utils/bundleLoader';
 import { ViewBuilder } from '../ui/ViewBuilder';
+import { Control } from '../ui/controls';
 
 export interface ExploreConfig {
-  params: Record<string, any>;
-  initial: (params: Record<string, any>) => any;
-  view:
-    | ViewBuilder
-    | ViewBuilder[];
+  params: Record<string, Control>;
+  initial?: (params: Params) => State;
+  timeRange?: [number, number];
+  timeStep?: number;
+  view: ViewBuilder | ViewBuilder[];
 }
 
 export interface ExploreOptions {
-  dt?: number;
-  maxTime?: number;
   width?: number | string;
   height?: number | string;
   target?: string | HTMLElement;
-  layout?: {
-    columns?: number;
-    rows?: number;
-    gaps?: number;
-  };
 }
 
 /**
@@ -39,8 +33,8 @@ export async function explore(
   config: ExploreConfig,
   options: ExploreOptions = {}
 ): Promise<void> {
-  const { params, initial, view: viewFn } = config;
-  const { dt = 0.01, maxTime = 10, width = 'auto', height = 480, target } = options;
+  const { params, initial, timeRange = [0, 10], timeStep = 0.01, view: viewFn } = config;
+  const { width = 'auto', height = 480, target } = options;
 
   // Handle single or multiple view functions
   const viewFunctions = Array.isArray(viewFn) ? viewFn : [viewFn];
@@ -73,9 +67,9 @@ export async function explore(
     type: 'explore' as const,
     model: serializeModel(model),
     params: serializeParams(params),
-    initial: initial.toString(),
+    initial: initial?.toString() || '',
     views: views,
-    options: { dt, maxTime, width, height }
+    options: { timeRange, timeStep, width, height }
   };
 
   const clientBundle = await loadClientBundle();

@@ -23,7 +23,7 @@ describe('Unit: Core Solver', () => {
         }
       });
 
-      const result = solve(model, { x: 0 }, { velocity: 2 }, { dt: 0.1, maxTime: 1 });
+      const result = solve(model, { x: 0 }, { velocity: 2 }, { timeRange: [0, 1], timeStep: 0.1 });
 
       // ✅ Basic solver check
       expect(result.times.length).toBeGreaterThanOrEqual(11);
@@ -32,6 +32,29 @@ describe('Unit: Core Solver', () => {
       expect(result.states.x[result.states.x.length - 1]).toBeCloseTo(2, 1); // x = velocity * time
 
       console.log(`🔧 Linear motion: x(1) = ${result.states.x[result.states.x.length - 1].toFixed(1)}`);
+    });
+
+    test('Scenario: Non-zero start time works correctly', () => {
+      // 📖 Story: Solver should handle simulations starting at non-zero time
+      
+      const model = defineIVP({
+        state: { x: 5 },
+        params: { velocity: 2 },
+        derivatives: {
+          x: (state: any, params: any) => params.velocity
+        }
+      });
+
+      // Test with start time = 5, end time = 10
+      const result = solve(model, { x: 5 }, { velocity: 2 }, { timeRange: [5, 10], timeStep: 0.5 });
+
+      // ✅ Non-zero start time checks
+      expect(result.times[0]).toBe(5, 'Should start at timeRange[0]');
+      expect(result.times[result.times.length - 1]).toBeCloseTo(10, 0);
+      expect(result.states.x[0]).toBe(5, 'Initial state should be preserved');
+      expect(result.states.x[result.states.x.length - 1]).toBeCloseTo(15, 1); // x = 5 + 2*(10-5) = 15
+
+      console.log(`🔧 Non-zero start time: x(10) = ${result.states.x[result.states.x.length - 1].toFixed(1)}`);
     });
 
     test('Scenario: Edge cases handled gracefully', () => {
@@ -43,8 +66,8 @@ describe('Unit: Core Solver', () => {
         derivatives: { x: () => 1 }
       });
 
-      const zeroTime = solve(model, { x: 1 }, {}, { dt: 0.1, maxTime: 0 });
-      const largeStep = solve(model, { x: 0 }, {}, { dt: 1.0, maxTime: 0.1 });
+      const zeroTime = solve(model, { x: 1 }, {}, { timeRange: [0, 0], timeStep: 0.1 });
+      const largeStep = solve(model, { x: 0 }, {}, { timeRange: [0, 0.1], timeStep: 1.0 });
 
       // ✅ Edge case checks
       expect(zeroTime.times).toEqual([0]);
@@ -79,7 +102,7 @@ describe('Unit: Core Solver', () => {
         }
       });
 
-      const result = solve(ballModel, { y: 1, vy: 0 }, { g: 9.81, restitution: 0.8 }, { dt: 0.01, maxTime: 2 });
+      const result = solve(ballModel, { y: 1, vy: 0 }, { g: 9.81, restitution: 0.8 }, { timeRange: [0, 2], timeStep: 0.01 });
 
       const heights = result.states.y;
       const groundContacts = heights.filter((y: number) => Math.abs(y) < 0.01).length;
@@ -116,7 +139,7 @@ describe('Unit: Core Solver', () => {
         }
       });
 
-      const result = solve(ballModel, { y: 1, vy: 0 }, { g: 9.81, restitution: 0.8 }, { dt: 0.01, maxTime: 2 });
+      const result = solve(ballModel, { y: 1, vy: 0 }, { g: 9.81, restitution: 0.8 }, { timeRange: [0, 2], timeStep: 0.01 });
 
       const heights = result.states.y;
       const groundContacts = heights.filter((y: number) => Math.abs(y) < 0.01).length;
@@ -146,7 +169,7 @@ describe('Unit: Core Solver', () => {
         }
       });
 
-      const result = solve(stopModel, { x: 0 }, {}, { dt: 0.1, maxTime: 10 });
+      const result = solve(stopModel, { x: 0 }, {}, { timeRange: [0, 10], timeStep: 0.1 });
 
       const finalX = result.states.x[result.states.x.length - 1];
 
@@ -177,7 +200,7 @@ describe('Unit: Core Solver', () => {
         }
       });
 
-      const result = solve(dropModel, { y: 1, vy: 0 }, { g: 9.81 }, { dt: 0.001, maxTime: 1 });
+      const result = solve(dropModel, { y: 1, vy: 0 }, { g: 9.81 }, { timeRange: [0, 1], timeStep: 0.001 });
 
       // Find when ground was hit
       const groundHitIndex = result.states.y.findIndex((y: number) => y <= 0);
@@ -215,7 +238,7 @@ describe('Unit: Core Solver', () => {
         }
       });
 
-      const result = solve(bounceModel, { y: 0.5, vy: 0 }, { g: 9.81, restitution: 0.9 }, { dt: 0.001, maxTime: 1 });
+      const result = solve(bounceModel, { y: 0.5, vy: 0 }, { g: 9.81, restitution: 0.9 }, { timeRange: [0, 1], timeStep: 0.001 });
 
       const times = result.times;
       

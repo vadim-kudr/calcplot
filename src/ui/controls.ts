@@ -2,14 +2,23 @@
  * Control types and utilities for UI components
  */
 
-export interface Control {
-  type: 'slider' | 'checkbox';
+export interface SliderControl {
+  type: 'slider';
   label: string;
-  default: number | boolean;
-  min?: number;
-  max?: number;
+  default: number;
+  min: number;
+  max: number;
   step?: number;
+  scale?: 'linear' | 'log';
 }
+
+export interface CheckboxControl {
+  type: 'checkbox';
+  label: string;
+  default: boolean;
+}
+
+export type Control = SliderControl | CheckboxControl;
 
 export function slider(
   min: number,
@@ -17,7 +26,7 @@ export function slider(
   defaultValue: number,
   label: string,
   step: number = 0.01
-): Control {
+): SliderControl {
   return {
     type: 'slider',
     label,
@@ -28,7 +37,7 @@ export function slider(
   };
 }
 
-export function checkbox(label: string, defaultValue: boolean = false): Control {
+export function checkbox(label: string, defaultValue: boolean = false): CheckboxControl {
   return {
     type: 'checkbox',
     label,

@@ -24,8 +24,8 @@ export interface ExploreDescriptor {
     viewDescriptor: any;
   }[];
   options: {
-    dt: number;
-    maxTime: number;
+    timeRange?: [number, number];
+    timeStep?: number;
     width: number | string;
     height: number | string;
   };

@@ -22,7 +22,7 @@ describe('SimulationBuilder - Fluent API Documentation', () => {
     const timeline = simulate(model)
       .initial({ population: 100.0 })
       .params({ growthRate: 0.2 })
-      .run({ dt: 0.1, maxTime: 5.0 });
+      .run({ timeRange: [0, 5.0], timeStep: 0.1 });
 
     // Then: should produce expected growth
     expect(timeline.at(0).population).toBe(100.0);
@@ -44,7 +44,7 @@ describe('SimulationBuilder - Fluent API Documentation', () => {
     const timeline = simulate(model)
       .initial({ x: 1.0, v: 0.0 })
       .params({ omega: 2.0 })
-      .run({ dt: 0.01, maxTime: 1.0 });
+      .run({ timeRange: [0, 1.0], timeStep: 0.01 });
 
     // Then: should complete oscillation
     expect(timeline.at(0).x).toBe(1.0);
@@ -66,10 +66,33 @@ describe('SimulationBuilder - Fluent API Documentation', () => {
     const timeline = simulate(model)
       .initial({ x: 0.0 })
       .params({ k: 3.0 })
-      .run({ dt: 0.1, maxTime: 1.0 });
+      .run({ timeRange: [0, 1.0], timeStep: 0.1 });
 
     // Then: should use builder params, not model defaults
     expect(timeline.at(1.0).x).toBeCloseTo(3.0, 1);
+  });
+
+  test('non-zero start time works correctly', () => {
+    // Given: model with initial state at time 5
+    const model = defineIVP({
+      state: { x: 5 },
+      params: { velocity: 2 },
+      derivatives: {
+        x: (state, params) => params.velocity
+      }
+    });
+
+    // When: running simulation from time 5 to 10
+    const timeline = simulate(model)
+      .initial({ x: 5 })
+      .params({ velocity: 2 })
+      .run({ timeRange: [5, 10], timeStep: 0.5 });
+
+    // Then: should handle non-zero start time correctly
+    expect(timeline.at(5).x).toBe(5);
+    expect(timeline.at(10).x).toBeCloseTo(15, 1); // x = 5 + 2*(10-5) = 15
+    expect(timeline.times[0]).toBe(5);
+    expect(timeline.times[timeline.times.length - 1]).toBeCloseTo(10, 0);
   });
 
   test('error handling for missing initial state', () => {
@@ -82,7 +105,7 @@ describe('SimulationBuilder - Fluent API Documentation', () => {
 
     // When/Then: should throw if initial state not set
     expect(() => {
-      simulate(model).run({ dt: 0.1, maxTime: 1.0 });
+      simulate(model).run({ timeRange: [0, 1.0], timeStep: 0.1 });
     }).toThrow('Initial state must be set before running simulation');
   });
 
@@ -103,7 +126,7 @@ describe('SimulationBuilder - Fluent API Documentation', () => {
     const timeline = simulate(model)
       .initial({ x: 0.0, y: 0.0, vx: 20.0, vy: 30.0 })
       .params({ g: 9.81 })
-      .run({ dt: 0.01, maxTime: 3.0 });
+      .run({ timeRange: [0, 3.0], timeStep: 0.01 });
 
     // Then: should follow calculation correctly
     const state = timeline.at(1.0);
@@ -133,7 +156,7 @@ describe('SimulationBuilder - Fluent API Documentation', () => {
     const timeline = simulate(model)
       .initial({ y: 10.0, vy: 0.0 })
       .params({ g: 9.81 })
-      .run({ dt: 0.01, maxTime: 3.0 });
+      .run({ timeRange: [0, 3.0], timeStep: 0.01 });
 
     // Then: should handle events
     expect(typeof timeline.at(3.0).vy).toBe('number');
@@ -154,8 +177,8 @@ describe('Advanced Usage Patterns', () => {
     const builder = simulate(model).initial({ x: 0.0 }).params({ k: 2.0 });
 
     // When: running multiple simulations
-    const timeline1 = builder.run({ dt: 0.1, maxTime: 1.0 });
-    const timeline2 = builder.run({ dt: 0.1, maxTime: 2.0 });
+    const timeline1 = builder.run({ timeRange: [0, 1.0], timeStep: 0.1 });
+    const timeline2 = builder.run({ timeRange: [0, 2.0], timeStep: 0.1 });
 
     // Then: should reuse configuration
     expect(timeline1.at(1.0).x).toBeCloseTo(2.0, 1);
@@ -177,9 +200,9 @@ describe('Advanced Usage Patterns', () => {
     });
 
     // When: running edge cases
-    const emptyTimeline = simulate(emptyModel).initial({}).run({ dt: 0.1, maxTime: 1.0 });
+    const emptyTimeline = simulate(emptyModel).initial({}).run({ timeRange: [0, 1.0], timeStep: 0.1 });
 
-    const zeroTimeline = simulate(zeroTimeModel).initial({ x: 1.0 }).run({ dt: 0.1, maxTime: 0 });
+    const zeroTimeline = simulate(zeroTimeModel).initial({ x: 1.0 }).run({ timeRange: [0, 0], timeStep: 0.1 });
 
     // Then: should handle gracefully
     expect(emptyTimeline.at(0)).toEqual({});

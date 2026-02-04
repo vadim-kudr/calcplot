@@ -3,11 +3,11 @@
  */
 
 import { div, input, label } from '../../utils/html-tag';
-import { Control } from '../controls';
+import { CheckboxControl } from '../controls';
 
 export interface CheckboxProps {
   id: string;
-  control: Control;
+  control: CheckboxControl;
   value?: boolean;
   onChange?: (id: string, value: boolean) => void;
 }
@@ -21,7 +21,7 @@ export function createCheckbox(container: HTMLElement, props: CheckboxProps): HT
   const inputElement = input({
     type: 'checkbox',
     id: inputId,
-    checked: props.value || false,
+    checked: props.value !== undefined ? props.value : props.control.default,
     'data-checkbox-id': props.id
   }) as HTMLInputElement;
 
