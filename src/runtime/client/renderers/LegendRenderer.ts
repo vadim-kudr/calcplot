@@ -37,7 +37,7 @@ export class LegendRenderer implements LayerRenderer {
     }
     
     const position = options.position || 'top-right';
-    const backgroundColor = options.backgroundColor || 'rgba(255, 255, 255, 0.9)';
+    const backgroundColor = options.backgroundColor || 'rgba(255, 255, 255, 0.75)';
     const borderColor = options.borderColor || '#ccc';
     const borderWidth = options.borderWidth || 1;
     const padding = options.padding || 10;
@@ -135,27 +135,35 @@ export class LegendRenderer implements LayerRenderer {
     context: RenderContext
   ): { x: number, y: number } {
     const margin = 10;
+    const axisWidth = 2; // Match axisWidth from AxisRenderer
     
     // Use margins from context
     const margins = context.margins;
     
-    // Position at plot area boundaries
-    const plotLeft = margins.left;
-    const plotRight = context.width - margins.right;
-    const plotTop = margins.top;
-    const plotBottom = context.height - margins.bottom;
+    // Position at plot area boundaries (inside axis frame)
+    const plotLeft = margins.left + axisWidth;
+    const plotRight = context.width - margins.right - axisWidth;
+    const plotTop = margins.top + axisWidth;
+    const plotBottom = context.height - margins.bottom - axisWidth;
     
+    let result;
     switch (position) {
       case 'top-left':
-        return { x: plotLeft + margin, y: plotTop + margin };
+        result = { x: plotLeft + margin, y: plotTop + margin };
+        break;
       case 'top-right':
-        return { x: plotRight - width - margin, y: plotTop + margin };
+        result = { x: plotRight - width - margin, y: plotTop + margin };
+        break;
       case 'bottom-left':
-        return { x: plotLeft + margin, y: plotBottom - height - margin };
+        result = { x: plotLeft + margin, y: plotBottom - height - margin };
+        break;
       case 'bottom-right':
-        return { x: plotRight - width - margin, y: plotBottom - height - margin };
+        result = { x: plotRight - width - margin, y: plotBottom - height - margin };
+        break;
       default:
-        return { x: plotRight - width - margin, y: plotTop + margin };
+        result = { x: plotRight - width - margin, y: plotTop + margin };
     }
+    
+    return result;
   }
 }

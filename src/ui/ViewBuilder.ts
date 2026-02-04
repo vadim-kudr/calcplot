@@ -256,7 +256,9 @@ export class ViewBuilder {
         color: options.color || 'gray',
         linestyle: options.linestyle || 'solid',
         linewidth: options.linewidth || 1,
-        label: options.label || ''
+        label: options.label || '',
+        labelPosition: options.labelPosition || 'auto',
+        labelOffset: options.labelOffset || 8
       }
     });
     return this;
@@ -274,7 +276,9 @@ export class ViewBuilder {
         color: options.color || 'gray',
         linestyle: options.linestyle || 'solid',
         linewidth: options.linewidth || 1,
-        label: options.label || ''
+        label: options.label || '',
+        labelPosition: options.labelPosition || 'auto',
+        labelOffset: options.labelOffset || 8
       }
     });
     return this;

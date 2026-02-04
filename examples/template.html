@@ -11,10 +11,10 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: #fafafa;
+            background: #f5f5f5;
         }
         .container {
             background: white;
@@ -23,7 +23,7 @@
             overflow: hidden;
         }
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2563eb;
             color: white;
             padding: 1.5rem;
             text-align: center;
@@ -33,111 +33,81 @@
             font-size: 1.8rem;
             font-weight: 600;
         }
-        header p {
-            margin: 0.5rem 0 0 0;
-            opacity: 0.9;
-            font-size: 1rem;
+        .example {
+            border-bottom: 1px solid #e5e7eb;
         }
-        .examples-list {
-            padding: 0;
-            margin: 0;
-            list-style: none;
-        }
-        .example-item {
-            border-bottom: 1px solid #e1e5e9;
-        }
-        .example-item:last-child {
+        .example:last-child {
             border-bottom: none;
         }
         .example-content {
             padding: 1.5rem;
+        }
+        .example h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.3rem;
+            color: #1f2937;
+        }
+        .example-meta {
+            margin-bottom: 1rem;
             font-size: 0.9rem;
+            color: #6b7280;
         }
-        .example-content h1,
-        .example-content h2,
-        .example-content h3 {
-            color: #2c3e50;
-            margin-top: 1rem;
-        }
-        .example-content h1 {
-            font-size: 1.5rem;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 0.5rem;
-        }
-        .example-content h2 {
-            font-size: 1.2rem;
-        }
-        .example-content h3 {
-            font-size: 1.1rem;
+        .example-description {
+            margin-bottom: 1.5rem;
+            color: #374151;
         }
         .exec-block {
+            border: 1px solid #d1d5db;
             border-radius: 6px;
-            border: 2px dashed #cbd5e0;
             margin: 1rem 0;
             overflow: hidden;
         }
         .exec-header {
-            background: #4a5568;
+            background: #374151;
             color: white;
             padding: 0.5rem 1rem;
             font-size: 0.9rem;
-            font-weight: 600;
+            font-weight: 500;
         }
         .exec-content {
             padding: 0;
         }
         .exec-demo {
-            border: 1px dashed #cbd5e0;
-            border-radius: 4px;
-            padding: 0;
-            margin: 0;
-        }
-        .calcplot-container {
-            width: 100%;
+            min-height: 480px;
+            border: 1px solid #e5e7eb;
             background: white;
-        }
-        .exec-shadow-root {
-            width: 100%;
-            min-height: 400px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            margin-top: 1rem;
         }
         pre[class*="language-"] {
-            margin: 1rem 0;
-            border-radius: 6px;
+            margin: 0;
+            border-radius: 0;
         }
         pre[class*="language-"] code {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
         }
-        code {
-            background: #f1f3f4;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-size: 0.75rem;
+        /* Hide CalcPlot example scripts from Prism */
+        script[type="text/x-calcplot-example"] {
+            display: none !important;
         }
-        .applications {
-            background: #e8f5e8;
-            border-left: 4px solid #28a745;
+        .try-section {
+            background: #f3f4f6;
+            border-left: 4px solid #10b981;
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 6px 6px 0;
         }
-        .applications h3 {
-            margin-top: 0;
-            color: #155724;
+        .try-section h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: #065f46;
         }
-        .applications ul {
-            margin-bottom: 0;
+        .try-section ul {
+            margin: 0;
+            padding-left: 1.2rem;
         }
-        @media (max-width: 768px) {
-            .example-content {
-                padding: 1rem;
-            }
-            header h1 {
-                font-size: 1.5rem;
-            }
+        .try-section li {
+            margin-bottom: 0.2rem;
+            font-size: 0.9rem;
+            color: #374151;
         }
     </style>
 </head>
@@ -145,12 +115,9 @@
     <div class="container">
         <header>
             <h1>CalcPlot Examples</h1>
-            <p>Interactive mathematical visualizations and differential equation simulations</p>
         </header>
         
-        <ul class="examples-list">
-            {{EXAMPLES}}
-        </ul>
+        {{EXAMPLES}}
     </div>
 
     <script type="module">
@@ -168,62 +135,79 @@
                     const codeId = block.getAttribute('data-code-id');
                     const scriptElement = document.getElementById(codeId);
                     
-                    if (scriptElement) {
+                    if (scriptElement && scriptElement.type === 'text/x-calcplot-example') {
                         const code = scriptElement.textContent;
                         
                         try {
-                            // Create target element in main document
-                            const targetElement = document.createElement('div');
-                            targetElement.className = 'calcplot-container';
-                            targetElement.id = 'calcplot-' + codeId;
-                            targetElement.style.width = '100%';
+                            // Create container for all plots in this block
+                            const containerElement = document.createElement('div');
+                            containerElement.className = 'exec-demo';
+                            containerElement.id = 'calcplot-container-' + codeId;
                             
-                            // Add target element to block
-                            block.appendChild(targetElement);
+                            // Add container to block
+                            block.appendChild(containerElement);
                             
                             // Import CalcPlot functions
                             const { defineIVP, simulate, explore, compare, show, view, slider } = await import('./index.js');
                             
-                            // Override functions to use shadow DOM container
-                            const originalExplore = explore;
-                            const originalCompare = compare;
-                            const originalShow = show;
+                            // Global counter for unique plot IDs within this block
+                            let plotCounter = 0;
                             
+                            // Override functions to create unique containers for each call
                             const wrappedExplore = function(model, options, config = {}) {
-                                const configWithTarget = { ...config, target: 'calcplot-' + codeId };
-                                return originalExplore(model, options, configWithTarget);
+                                const plotId = `${codeId}-plot-${plotCounter++}`;
+                                const plotElement = document.createElement('div');
+                                plotElement.id = plotId;
+                                plotElement.style.width = '100%';
+                                
+                                containerElement.appendChild(plotElement);
+                                
+                                const configWithTarget = { ...config, target: plotId };
+                                return explore(model, options, configWithTarget);
                             };
                             
                             const wrappedCompare = function(timelines, viewBuilder, config = {}) {
-                                const configWithTarget = { ...config, target: 'calcplot-' + codeId };
-                                return originalCompare(timelines, viewBuilder, configWithTarget);
+                                const plotId = `${codeId}-plot-${plotCounter++}`;
+                                const plotElement = document.createElement('div');
+                                plotElement.id = plotId;
+                                plotElement.style.width = '100%';
+                                
+                                containerElement.appendChild(plotElement);
+                                
+                                const configWithTarget = { ...config, target: plotId };
+                                return compare(timelines, viewBuilder, configWithTarget);
                             };
                             
                             const wrappedShow = function(timeline, viewBuilder, config = {}) {
-                                const configWithTarget = { ...config, target: 'calcplot-' + codeId };
-                                return originalShow(timeline, viewBuilder, configWithTarget);
+                                const plotId = `${codeId}-plot-${plotCounter++}`;
+                                const plotElement = document.createElement('div');
+                                plotElement.id = plotId;
+                                plotElement.style.width = '100%';
+                                
+                                containerElement.appendChild(plotElement);
+                                
+                                const configWithTarget = { ...config, target: plotId };
+                                return show(timeline, viewBuilder, configWithTarget);
                             };
                             
-                            // Override global functions temporarily
-                            window.explore = wrappedExplore;
-                            window.compare = wrappedCompare;
-                            window.show = wrappedShow;
-                            
-                            // Create async function with injected functions
-                            const asyncFunction = new Function('defineIVP', 'simulate', 'explore', 'compare', 'show', 'view', 'slider', 'targetElement', 
-                                'return (async () => {' + code.replace(/import\s*\{[^}]+\}\s*from\s*['"][^'"]*['"];?\s*/g, '') + '})()'
+                            // Execute the code with injected functions
+                            const asyncFunction = new Function('defineIVP', 'simulate', 'explore', 'compare', 'show', 'view', 'slider', 'containerElement', 
+                                `
+                                (function() {
+                                  ${code.replace(/import\s*\{[^}]+\}\s*from\s*['"][^'"]*['"];?\s*\n?/g, '')} // Remove imports for execution
+                                })()
+                                `
                             );
                             
-                            // Execute the code with injected functions
-                            await asyncFunction(defineIVP, simulate, window.explore, window.compare, window.show, view, slider, targetElement);
+                            // Execute without await - functions will handle async internally
+                            asyncFunction(defineIVP, simulate, wrappedExplore, wrappedCompare, wrappedShow, view, slider, containerElement);
                             
-                            // Restore original functions
-                            window.explore = originalExplore;
-                            window.compare = originalCompare;
-                            window.show = originalShow;
                         } catch (error) {
-                            demoContainer.querySelector('div').innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
-                            console.error('Demo execution error:', error);
+                            const demoContainer = block.querySelector('.exec-demo');
+                            if (demoContainer) {
+                                demoContainer.innerHTML = `<span style="color: #dc3545;">❌ Error: ${error.message}</span>`;
+                            }
+                            console.error(`Error in block ${codeId}:`, error);
                         }
                     }
                 }

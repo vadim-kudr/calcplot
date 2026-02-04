@@ -246,13 +246,15 @@ interface PlotOptions {
 ```javascript
 // Scalar plot (time series)
 view()
-  .plot((s) => s.x, { color: 'blue', label: 'Position' })
-  .plot((s) => s.v, { color: 'red', label: 'Velocity' })
+  .plot((s) => s.x, { label: 'Position' })
+  .plot((s) => s.v, { label: 'Velocity' })
 
 // Parametric plot (phase portrait)
 view()
-  .plot((s) => [s.x, s.v], { color: 'purple', lineWidth: 2 })
+  .plot((s) => [s.x, s.v], { lineWidth: 2 })
 ```
+
+**Note:** Colors are automatically selected from a palette of 10 distinct colors. You can optionally specify colors, but it's usually not necessary.
 
 #### `.grid(options?)`
 

@@ -22,48 +22,61 @@ deno add calcplot
 
 ## Quick Start
 ```typescript
-import { defineIVP, explore, slider, view } from "npm:calcplot";
+import { defineIVP, explore, view, slider } from 'calcplot';
 
-const oscillatorModel = defineIVP({
-  state: { x: 1, v: 0 },
-  params: { omega: 1, damping: 0.2 },
+// Model: nonlinear pendulum
+const model = defineIVP({
+  state: { 
+    theta: 0.5,    // Initial angle (radians)
+    omega: 0       // Initial angular velocity
+  },
+  params: { 
+    L: 1,          // Length (meters)
+    g: 9.81        // Gravity (m/s²)
+  },
   derivatives: {
-    x: (s) => s.v,
-    v: (s, p) => -p.omega * p.omega * s.x - p.damping * s.v
+    theta: (s) => s.omega,                    // Angle changes with angular velocity
+    omega: (s, p) => -(p.g / p.L) * Math.sin(s.theta)  // Angular acceleration
   }
 });
 
-explore(
-  oscillatorModel,
-  {
-    params: {
-      amplitude: slider(0.1, 2, 1, 'Initial Amplitude'),
-      omega: slider(0.5, 3, 1, 'Angular Frequency (rad/s)'),
-      damping: slider(0, 1, 0.2, 'Damping Coefficient')
-    },
-
-    initial: (p) => ({
-      x: p.amplitude,
-      v: 0
-    }),
-
-    view: [
-      // First view: position and velocity over time
-      view()
-        .plot((s) => s.x, { label: 'Position' })
-        .plot((s) => s.v, { label: 'Velocity' })
-        .grid()
-        .axis({ xLabel: 'Time (s)', yLabel: 'Value' }),
-
-      // Second view: phase space
-      view()
-        .plot((s) => [s.x, s.v], { label: 'Phase Space' })
-        .grid()
-        .axis({ xLabel: 'Position', yLabel: 'Velocity', aspectRatio: 'equal' })
-    ]
-  }
-);
+// Interactive exploration with multiple views
+explore(model, {
+  params: {
+    L: slider(0.1, 3, 1, 'Pendulum Length (m)'),
+    g: slider(1, 20, 9.81, 'Gravity (m/s²)'),
+    theta0: slider(-Math.PI, Math.PI, 0.5, 'Initial Angle (rad)'),
+    omega0: slider(-5, 5, 0, 'Initial Angular Velocity')
+  },
+  initial: (p) => ({ theta: p.theta0, omega: p.omega0 }),
+  timeRange: [0, 10],
+  view: [
+    // Time series view
+    view()
+      .plot(s => s.theta, { label: 'Angle' })
+      .plot(s => s.omega, { label: 'Angular Velocity' })
+      .axis({ 
+        xLabel: 'Time (s)', 
+        yLabel: 'Value'
+      })
+      .grid()
+      .title('Pendulum Motion'),
+    
+    // Phase portrait view
+    view()
+      .plot(s => [s.theta, s.omega], { label: 'Trajectory' })
+      .axis({ 
+        xLabel: 'Angle (rad)', 
+        yLabel: 'Angular Velocity',
+        aspectRatio: 'equal'
+      })
+      .grid()
+      .title('Phase Portrait')
+  ]
+});
 ```
+
+![Interactive Pendulum Demo](assets/interactive_pendulum.png)
 
 ---
 

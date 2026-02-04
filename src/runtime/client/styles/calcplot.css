@@ -82,7 +82,7 @@
 }
 
 .calcplot-style .legend-background {
-  fill: white;
+  fill: rgba(255, 255, 255, 0.75);
   stroke: #666;
   stroke-width: 1.0;
 }
