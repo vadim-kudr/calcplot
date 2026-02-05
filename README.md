@@ -21,6 +21,12 @@ deno add calcplot
 ```
 
 ## Quick Start
+
+For detailed documentation, see:
+- **[Quick Start.md](Quick%20Start.md)** - Get started in 5 minutes
+- **[API.md](API.md)** - Complete API reference
+
+### Basic Example
 ```typescript
 import { defineIVP, explore, view, slider } from 'calcplot';
 
@@ -53,23 +59,16 @@ explore(model, {
   view: [
     // Time series view
     view()
-      .plot(s => s.theta, { label: 'Angle' })
-      .plot(s => s.omega, { label: 'Angular Velocity' })
-      .axis({ 
-        xLabel: 'Time (s)', 
-        yLabel: 'Value'
-      })
+      .plot(s => s.theta, 'Angle')
+      .plot(s => s.omega, 'Angular Velocity')
+      .axis('Time (s)', 'Value')
       .grid()
       .title('Pendulum Motion'),
     
     // Phase portrait view
     view()
-      .plot(s => [s.theta, s.omega], { label: 'Trajectory' })
-      .axis({ 
-        xLabel: 'Angle (rad)', 
-        yLabel: 'Angular Velocity',
-        aspectRatio: 'equal'
-      })
+      .plot(s => [s.theta, s.omega], 'Trajectory')
+      .axis('Angle (rad)', 'Angular Velocity', 'equal')
       .grid()
       .title('Phase Portrait')
   ]
@@ -80,13 +79,18 @@ explore(model, {
 
 ---
 
-## API Overview
+## Documentation
+
+- **[Quick Start.md](Quick%20Start.md)** - Get started in 5 minutes with practical examples
+- **[API.md](API.md)** - Complete API reference with all functions and options
+- **[Examples](examples/)** - Browse ready-to-use examples
 
 ### Core Functions
 
 - `defineIVP(config)` - Define initial value problem
 - `explore(model, config)` - Interactive exploration with controls
-- `show(timeline, view)` - Static visualization (no controls)
+- `show(model, config)` - Static visualization (no controls)
+- `compare(models, config)` - Compare multiple simulations
 - `simulate(model)` - Programmatic simulation
 
 ### Controls
@@ -96,13 +100,17 @@ explore(model, {
 
 ### View Builders
 
-- `canvas(options?)` - Create canvas view
+- `view()` - Create view builder
 - `plot(selector, options?)` - Add plot layer
 - `scene(drawFn)` - Custom drawing
 - `grid(options?)` - Grid layer
 - `axis(options?)` - Axes with labels
-- `vector(at, dir, options?)` - Arrow vectors
-- `marker(at, options?)` - Point marker
+- `vectorField(field, options?)` - Vector field
+- `nullcline(variable, options?)` - Nullcline lines
+- `poincare(section, options?)` - Poincaré sections
+- `fill(predicate, options?)` - Fill regions
+- `title(text)` - Plot title
+- `legend(options?)` - Add legend
 
 ### Draw Context (in `scene()`)
 
@@ -129,19 +137,33 @@ explore(model, {
 
 ---
 
+## Examples & Demos
+
+- **[Example Gallery](examples/)** - Browse by category:
+  - `01-basics/` - Simple oscillators and motion
+  - `02-with-params/` - Parameter exploration  
+  - `03-compare/` - Multiple simulations
+  - `04-interactive/` - Interactive controls
+  - `05-robotics/` - Robotics and control systems
+  - `06-advanced/` - Advanced mathematical models
+
 ## Development
+
 ```bash
-# Install
+# Install dependencies
 npm install
 
-# Build client runtime
+# Build library
 npm run build
 
-# Watch mode
+# Start development server
 npm run dev
 
-# Run examples
-npm run example
+# Build and serve examples
+npm run dev:examples
+
+# Run tests
+npm test
 ```
 
 ---
