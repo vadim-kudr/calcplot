@@ -9,7 +9,7 @@ import { parseDimension } from '../utils/dimensions';
 // Create container wrapper for multiple views
 export function createWrapper(container: HTMLElement, width: string | number, height: string | number, gaps: number): HTMLElement {
   const wrapper = createElement('div', {
-    style: `display: flex; width: ${width}; height: ${height}; gap: ${gaps}px;`
+    style: `display: flex; width: ${width}; min-height: ${height}; gap: ${gaps}px;`
   });
   container.appendChild(wrapper);
   return wrapper;
@@ -26,7 +26,7 @@ export function initializeViews(views: any[], container: HTMLElement, width: str
   
   return views.map((viewData: any, index: number) => {
     const viewContainer = createElement('div', {
-      style: `width: ${viewWidth}px; height: ${viewHeight}px; flex: 1; min-width: 0;`
+      style: `width: ${viewWidth}px; min-height: ${viewHeight}px; flex: 1; min-width: 0;`
     });
     container.appendChild(viewContainer);
 

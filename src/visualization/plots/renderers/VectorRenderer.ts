@@ -22,14 +22,21 @@ export class VectorRenderer implements LayerRenderer {
       return;
     }
 
-    let atFn: (s: any) => any;
-    let dirFn: (s: any) => any;
+    let atFn: (s: any, p?: any) => any;
+    let dirFn: (s: any, p?: any) => any;
+    
     try {
+      // Always try with params first
+      atFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], at) as (s: any, p: any) => any;
+    } catch {
       atFn = FunctionSerializer.parseAndCreateFunction(['s'], at) as (s: any) => any;
+    }
+    
+    try {
+      // Always try with params first
+      dirFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], dir) as (s: any, p: any) => any;
+    } catch {
       dirFn = FunctionSerializer.parseAndCreateFunction(['s'], dir) as (s: any) => any;
-    } catch (e) {
-      console.warn('Failed to compile vector functions:', e);
-      return;
     }
 
     const vectors: Array<{x: number, y: number, vx: number, vy: number}> = [];
@@ -41,8 +48,8 @@ export class VectorRenderer implements LayerRenderer {
       }, {});
 
       try {
-        const position = atFn(state);
-        const direction = dirFn(state);
+        const position = atFn(state, context.params);
+        const direction = dirFn(state, context.params);
         
         if (Array.isArray(position) && position.length === 2 && 
             Array.isArray(direction) && direction.length === 2) {

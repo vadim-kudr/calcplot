@@ -118,6 +118,7 @@ function startServer(port = '8080') {
 
 // Build library function
 async function buildLibrary() {
+  const start = Date.now();
   const contexts = await Promise.all(configs.map(config => {
     if (isVerbose) console.log(`  → ${config.entryPoints[0]} → ${config.outfile}`);
     return esbuild.context(config);
@@ -126,13 +127,13 @@ async function buildLibrary() {
   if (isWatch) {
     console.log('👀 Watching library... (Ctrl+C to stop)');
     await Promise.all(contexts.map(ctx => ctx.watch()));
+    return contexts;
   } else {
     await Promise.all(contexts.map(ctx => ctx.rebuild()));
-    console.log(`✅ Library built in ${((Date.now() - Date.now()) / 1000).toFixed(2)}s`);
+    console.log(`✅ Library built in ${((Date.now() - start) / 1000).toFixed(2)}s`);
     console.log('📦 Files:', configs.map(c => c.outfile).join(', '));
+    return contexts;
   }
-  
-  return contexts;
 }
 
 // Build examples bundle function
@@ -144,7 +145,6 @@ async function buildExamplesBundle() {
 
 // Build function
 async function build() {
-  const start = Date.now();
   if (!fs.existsSync('./dist')) fs.mkdirSync('./dist', { recursive: true });
   
   // Build examples bundle
@@ -171,16 +171,11 @@ async function build() {
   
   // Build library
   let contexts;
-  contexts = await buildLibrary();
-  
   if (isWatch) {
-    console.log('👀 Watching library... (Ctrl+C to stop)');
-    await Promise.all(contexts.map(ctx => ctx.watch()));
+    contexts = await buildLibrary();
   } else {
-    await Promise.all(contexts.map(ctx => ctx.rebuild()));
+    contexts = await buildLibrary();
     await Promise.all(contexts.map(ctx => ctx.dispose()));
-    console.log(`✅ Library built in ${((Date.now() - start) / 1000).toFixed(2)}s`);
-    console.log('📦 Files:', configs.map(c => c.outfile).join(', '));
   }
   
   // Build examples

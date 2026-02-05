@@ -20,7 +20,7 @@ export class PlotRenderer implements LayerRenderer {
   render(layer: any, context: RenderContext, timeline?: any): void {
     if (!timeline) return;
     
-    const plotData = this.extractPlotData(timeline, layer);
+    const plotData = this.extractPlotData(timeline, layer, context);
     
     if (plotData) {
       const validData = DataFilter.filterValidData(plotData.xValues, plotData.yValues);
@@ -70,27 +70,36 @@ export class PlotRenderer implements LayerRenderer {
   /**
    * Extract plot data from timeline and layer
    */
-  private extractPlotData(timeline: any, layer: any): { xValues: number[], yValues: number[] } | null {
+  private extractPlotData(timeline: any, layer: any, context: RenderContext): { xValues: number[], yValues: number[] } | null {
     const { selector } = layer;
 
-    // Determine if this is a parametric plot by checking the selector
+    // Determine if this is a parametric plot by checking selector
     let isParametric = false;
     try {
       const testState = { x: 0, y: 0 };
-      const result = FunctionSerializer.parseAndCreateFunction(['s'], selector)(testState);
+      const testParams = context.params || {};
+      
+      // Test with params first
+      const result = FunctionSerializer.parseAndCreateFunction(['s', 'p'], selector)(testState, testParams);
       isParametric = Array.isArray(result) && result.length === 2;
     } catch (e) {
-      isParametric = false;
-      console.warn('Parametric check failed:', e);
+      // Fall back to state-only
+      try {
+        const testState = { x: 0, y: 0 };
+        const result = FunctionSerializer.parseAndCreateFunction(['s'], selector)(testState);
+        isParametric = Array.isArray(result) && result.length === 2;
+      } catch (fallbackError) {
+        console.warn('Parametric check failed:', fallbackError);
+        return null;
+      }
     }
 
-  // Create function from selector
-    let selectFn: (s: any) => any;
+  // Create function once - always try with params first
+    let selectFn: (s: any, p?: any) => any;
     try {
+      selectFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], selector) as (s: any, p: any) => any;
+    } catch {
       selectFn = FunctionSerializer.parseAndCreateFunction(['s'], selector) as (s: any) => any;
-    } catch (e) {
-      console.warn('Failed to compile selector:', e);
-      return null;
     }
 
     if (isParametric) {
@@ -100,7 +109,8 @@ export class PlotRenderer implements LayerRenderer {
           acc[key] = timeline.states[key][i];
           return acc;
         }, {});
-        const result = selectFn(state);
+        
+        const result = selectFn(state, context.params);
         return result;
       });
 
@@ -117,7 +127,8 @@ export class PlotRenderer implements LayerRenderer {
           acc[key] = timeline.states[key][i];
           return acc;
         }, {});
-        const result = selectFn(state);
+        
+        const result = selectFn(state, context.params);
         return result;
       });
 

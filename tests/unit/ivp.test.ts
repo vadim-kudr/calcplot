@@ -1,10 +1,10 @@
 /**
- * Unit tests for core/ivp.ts
+ * Unit tests for core/defineIVP.ts
  * Documentation-style tests for type definitions and defineIVP function
  */
 
 import { describe, test, expect } from 'vitest';
-import { defineIVP } from '../../src/core/ivp';
+import { defineIVP } from '../../src/core/defineIVP';
 
 describe('defineIVP Function - Usage Examples', () => {
   test('complete mathematical model with events', () => {

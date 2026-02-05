@@ -3,14 +3,14 @@
  */
 
 // Core exports
-export { defineIVP } from '../core/ivp';
+export { defineIVP } from '../core/defineIVP';
 export { simulate } from '../core/simulate';
 export { Timeline } from '../core/timeline';
 
 // Declarative API exports
-export { compare } from './compare';
-export { explore } from './explore';
-export { show } from './show';
+export { compare } from './api/compare';
+export { explore } from './api/explore';
+export { show } from './api/show';
 
 // Simple API exports 
 export { axis, canvas, grid, plot, scene } from './builders/SimpleViewBuilder';
@@ -30,20 +30,25 @@ export type {
   SimulationOptions,
   State,
   Timeline as TimelineInterface
-} from '../core/ivp';
+} from '../core/types';
 
 export type {
   DrawContext,
   GridOptions,
   Layer,
   PlotOptions,
+  AxisOptions,
   SceneFunction,
   SelectorFunction,
   VectorFunction,
   VectorOptions,
-} from './builders/ViewBuilder';
+} from './builders/BuilderUtils';
+
+export { parsePlotArgs, parseAxisArgs } from './builders/BuilderUtils';
 
 export type { Control } from './controls';
+
+export type { AnyDescriptor } from './types';
 
 // Utils
 export { detectEnvironment, isDenoJupyter, supportsHTMLOutput } from './utils/environment';

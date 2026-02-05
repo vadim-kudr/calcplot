@@ -68,7 +68,7 @@ export class SVGManager {
       .attr('height', this.dimensions.height);
   }
 
-  getContext(): RenderContext {
+  getContext(params?: any): RenderContext {
     // Scales guaranteed to exist - return directly
     return {
       svg: this.svg,
@@ -82,7 +82,8 @@ export class SVGManager {
         right: 20,
         bottom: 40,
         left: 60
-      }
+      },
+      params  // Pass parameters to render context
     };
   }
 

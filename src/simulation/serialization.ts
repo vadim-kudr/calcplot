@@ -3,22 +3,14 @@
  * Handles serialization/deserialization of models, params, functions, and timelines
  */
 
+import { SerializedParams } from '../lib/types';
+import { SliderControl, CheckboxControl, Control } from '../lib/controls';
+
 export interface SerializedModel {
   state: Record<string, number>;
   params: Record<string, number>;
   derivatives: Record<string, string>;
   events?: Record<string, string>;
-}
-
-export interface SerializedParams {
-  [key: string]: {
-    type: string;
-    min: number;
-    max: number;
-    default: number;
-    label: string;
-    step: number;
-  };
 }
 
 export interface SerializedTimeline {
@@ -127,17 +119,29 @@ export function serializeModel(model: any): SerializedModel {
 /**
  * Serialize parameters (sliders) for HTML embedding
  */
-export function serializeParams(params: Record<string, any>): SerializedParams {
+export function serializeParams(params?: Record<string, Control>): SerializedParams {
   const serialized: SerializedParams = {};
+  if (!params) {
+    return serialized;
+  }
   for (const [key, control] of Object.entries(params)) {
-    serialized[key] = {
-      type: control.type || 'slider',
-      min: control.min,
-      max: control.max,
-      default: control.default,
-      label: control.label || key,
-      step: control.step || 0.01
-    };
+    if (control.type === 'slider') {
+      serialized[key] = {
+        type: control.type,
+        min: control.min,
+        max: control.max,
+        default: control.default,
+        label: control.label || key,
+        step: control.step || 0.01,
+        scale: control.scale
+      };
+    } else {
+      serialized[key] = {
+        type: control.type,
+        default: control.default,
+        label: control.label || key
+      };
+    }
   }
   return serialized;
 }
@@ -158,7 +162,11 @@ export function serializeTimeline(timeline: any): SerializedTimeline {
 export function deserializeParams(serializedParams: SerializedParams): Record<string, number> {
   const params: Record<string, number> = {};
   for (const [key, control] of Object.entries(serializedParams)) {
-    params[key] = control.default;
+    if (control.type === 'slider') {
+      params[key] = control.default;
+    } else if (control.type === 'checkbox') {
+      params[key] = control.default ? 1 : 0; // Convert boolean to number
+    }
   }
   return params;
 }

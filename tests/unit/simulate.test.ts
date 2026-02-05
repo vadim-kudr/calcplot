@@ -5,7 +5,7 @@
 
 import { describe, test, expect } from 'vitest';
 import { simulate } from '../../src/core/simulate';
-import { defineIVP } from '../../src/core/ivp';
+import { defineIVP } from '../../src/core/defineIVP';
 
 describe('SimulationBuilder - Fluent API Documentation', () => {
   test('basic simulation workflow', () => {

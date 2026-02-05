@@ -22,7 +22,7 @@ export function initializeShow(data: any, container: HTMLElement, log: (...args:
       const heightWithUnits = ensureUnits(containerHeight);
       
     const multiViewContainer = document.createElement('div');
-    multiViewContainer.style.cssText = `display: flex; flex-wrap: wrap; gap: ${layout.gaps}px; height: ${heightWithUnits};`;
+    multiViewContainer.style.cssText = `display: flex; flex-wrap: wrap; gap: ${layout.gaps}px; min-height: ${heightWithUnits};`;
       container.appendChild(multiViewContainer);
 
       // Create renderers

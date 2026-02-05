@@ -3,8 +3,9 @@
  * Based on LAYOUT.md recommendations
  */
 
-import { PlotOptions, SceneFunction, SelectorFunction, ViewBuilder } from './ViewBuilder';
-import { Timeline } from '../../core/ivp';
+import { PlotOptions, SceneFunction, SelectorFunction, parsePlotArgs, parseAxisArgs } from './BuilderUtils';
+import { ViewBuilder } from './ViewBuilder';
+import type { Timeline } from '../../core/types';
 
 export class SimpleViewBuilder {
   private layers: Array<{
@@ -23,11 +24,13 @@ export class SimpleViewBuilder {
     return this;
   }
 
-  plot(selector: SelectorFunction, options?: PlotOptions): SimpleViewBuilder {
+  plot(selector: SelectorFunction, arg2?: string | PlotOptions, arg3?: string): SimpleViewBuilder {
+    const { selector: parsedSelector, options } = parsePlotArgs(selector, arg2, arg3);
     this.layers.push({
       type: 'plot',
       method: 'plot',
-      args: [selector, options]
+      args: [parsedSelector, options],
+      options
     });
     return this;
   }
@@ -48,21 +51,13 @@ export class SimpleViewBuilder {
     return this;
   }
 
-  axis(options?: any): SimpleViewBuilder {
+  axis(arg1?: string | number | any, arg2?: string, arg3?: number): SimpleViewBuilder {
+    const { options } = parseAxisArgs(arg1, arg2, arg3);
     this.layers.push({
       type: 'axis',
       method: 'axis',
       args: [options],
-      options: {
-        showTicks: true,
-        showLabels: true,
-        tickSize: 6,
-        tickPadding: 3,
-        labelPadding: 20,
-        fontSize: 12,
-        fontColor: '#333',
-        ...options
-      }
+      options
     });
     return this;
   }
@@ -97,16 +92,22 @@ export function scene(drawFn: SceneFunction): SimpleViewBuilder {
   return new SimpleViewBuilder().scene(drawFn);
 }
 
-export function plot(selector: SelectorFunction, options?: PlotOptions): SimpleViewBuilder {
-  return new SimpleViewBuilder().plot(selector, options);
+export function plot(selector: SelectorFunction, label?: string): SimpleViewBuilder;
+export function plot(selector: SelectorFunction, color: string, label?: string): SimpleViewBuilder;
+export function plot(selector: SelectorFunction, options?: PlotOptions): SimpleViewBuilder;
+export function plot(selector: SelectorFunction, arg2?: string | PlotOptions, arg3?: string): SimpleViewBuilder {
+  return new SimpleViewBuilder().plot(selector, arg2, arg3);
 }
 
 export function grid(options?: any): SimpleViewBuilder {
   return new SimpleViewBuilder().grid(options);
 }
 
-export function axis(options?: any): SimpleViewBuilder {
-  return new SimpleViewBuilder().axis(options);
+export function axis(xLabel?: string, yLabel?: string, aspectRatio?: number): SimpleViewBuilder;
+export function axis(aspectRatio?: number): SimpleViewBuilder;
+export function axis(options?: any): SimpleViewBuilder;
+export function axis(arg1?: string | number | any, arg2?: string, arg3?: number): SimpleViewBuilder {
+  return new SimpleViewBuilder().axis(arg1, arg2, arg3);
 }
 
 // For explicit canvas settings

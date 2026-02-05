@@ -2,120 +2,8 @@
  * Chainable API for building visualizations
  */
 
-import { State, Timeline } from '../../core/ivp';
-
-import { AxisOptions } from '../../visualization/plots/renderers/AxisRenderer';
-
-export interface GridOptions {
-  color?: string;
-  alpha?: number;
-  spacing?: number;
-}
-
-export interface PlotOptions {
-  color?: string;
-  lineWidth?: number;
-  dash?: number[];
-  label?: string;
-  alpha?: number;
-}
-
-export interface FillOptions {
-  color?: string;
-  alpha?: number;
-}
-
-export interface RefLineOptions {
-  color?: string;
-  linestyle?: 'solid' | 'dashed' | 'dotted';
-  linewidth?: number;
-  label?: string;
-  labelPosition?: 'left' | 'right' | 'top' | 'bottom' | 'auto';
-  labelOffset?: number;
-}
-
-export interface LegendOptions {
-  loc?: 'upper right' | 'upper left' | 'lower right' | 'lower left' | 'center';
-  frame?: boolean;
-  alpha?: number;
-}
-
-export interface VectorFieldOptions {
-  gridSize?: number;
-  color?: string;
-  alpha?: number;
-  normalize?: boolean;
-  scale?: number;
-}
-
-export interface PoincareOptions {
-  section: (state: State) => boolean;    // Section condition
-  direction?: 'positive' | 'negative' | 'both';  // Crossing direction
-  marker?: string;                    // Marker style ('circle' | 'cross')
-  color?: string;                      // Color
-  size?: number;                       // Marker size
-}
-
-export interface NullclineOptions {
-  color?: string;
-  linestyle?: 'solid' | 'dashed' | 'dotted';
-  linewidth?: number;
-  label?: string;
-}
-
-export interface VectorOptions {
-  color?: string;
-  label?: string;
-  scale?: number;
-  width?: number;
-}
-
-export interface SceneFunction {
-  (ctx: DrawContext, state: State): void;
-}
-
-export interface SelectorFunction {
-  (state: State): number | [number, number];
-}
-
-export interface VectorFunction {
-  (state: State): [number, number];
-}
-
-export interface DrawContext {
-  line: (
-    from: [number, number],
-    to: [number, number],
-    options?: { width?: number; color?: string; dash?: number[] }
-  ) => void;
-  circle: (
-    center: [number, number],
-    radius: number,
-    options?: { fill?: string; stroke?: string; width?: number }
-  ) => void;
-  arrow: (
-    from: [number, number],
-    to: [number, number],
-    options?: { width?: number; color?: string; headSize?: number }
-  ) => void;
-  text: (
-    pos: [number, number],
-    text: string,
-    options?: { color?: string; size?: number; font?: string }
-  ) => void;
-  plot: (xValues: number[], yValues: number[], options?: PlotOptions) => void;
-}
-
-export interface Layer {
-  type: 'grid' | 'scene' | 'plot' | 'vector' | 'bounds' | 'axis' | 'fill' | 'refline' | 'title' | 'legend' | 'vectorField' | 'nullcline' | 'poincare';
-  options?: any;
-  draw?: string; // serialized function
-  selector?: string; // serialized function
-  at?: string; // serialized function
-  dir?: string; // serialized function
-  bounds?: { x?: [number, number] | 'auto'; y?: [number, number] | 'auto' };
-  parametric?: boolean; // true for [x, y] plots
-}
+import { State, Timeline } from '../../core/types';
+import { PlotOptions, AxisOptions, GridOptions, FillOptions, RefLineOptions, LegendOptions, VectorFieldOptions, PoincareOptions, NullclineOptions, VectorOptions, SceneFunction, VectorFunction, DrawContext, Layer, SelectorFunction, parsePlotArgs, parseAxisArgs } from './BuilderUtils';
 
 export class ViewBuilder {
   private layers: Layer[] = [];
@@ -174,9 +62,10 @@ export class ViewBuilder {
   }
 
   /**
-   * Add axis layer
+   * Add axis layer with flexible signature support
    */
-  axis(options: AxisOptions = {}): ViewBuilder {
+  axis(arg1?: string | number | any, arg2?: string, arg3?: number): ViewBuilder {
+    const { options } = parseAxisArgs(arg1, arg2, arg3);
     this.layers.push({
       type: 'axis',
       options: options
@@ -185,9 +74,10 @@ export class ViewBuilder {
   }
 
   /**
-   * Add plot layer
+   * Add plot layer with flexible signature support
    */
-  plot(selector: SelectorFunction, options: PlotOptions = {}): ViewBuilder {
+  plot(selector: SelectorFunction, arg2?: string | PlotOptions, arg3?: string): ViewBuilder {
+    const { selector: parsedSelector, options } = parsePlotArgs(selector, arg2, arg3);
     const calcplotColors = [
       '#1f77b4', // blue
       '#ff7f0e', // orange
@@ -201,12 +91,12 @@ export class ViewBuilder {
       '#17becf'  // cyan
     ];
 
-    const isParametric = this.detectParametricSelector(selector);
+    const isParametric = this.detectParametricSelector(parsedSelector);
     const plotIndex = this.layers.filter(l => l.type === 'plot').length;
 
     this.layers.push({
       type: 'plot',
-      selector: this.serializeFunction(selector),
+      selector: this.serializeFunction(parsedSelector),
       parametric: isParametric,
       options: {
         color: options.color || calcplotColors[plotIndex % calcplotColors.length],

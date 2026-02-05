@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { defineIVP } from '../../src/core/ivp';
+import { defineIVP } from '../../src/core/defineIVP';
 import { solve } from '../../src/core/solver';
 
 describe('Unit: Core Solver', () => {

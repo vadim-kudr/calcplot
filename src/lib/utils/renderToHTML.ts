@@ -1,4 +1,4 @@
-import { AnyDescriptor } from '../../core/types';
+import { AnyDescriptor } from '../../lib/types';
 
 export function renderToHTML(descriptor: AnyDescriptor, bundleContent?: string): string {
   const containerId = 'calcplot-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);

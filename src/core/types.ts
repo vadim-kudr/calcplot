@@ -1,75 +1,46 @@
 /**
- * Shared types between server and client
- * CalcPlot visualization descriptors
+ * Core types and interfaces for Initial Value Problems (IVP)
  */
 
-import { Control } from '../lib/controls';
-
-export interface ViewDescriptor {
-  timeline: {
-    times: number[];
-    states: Record<string, number[]>;
-  };
-  layers: any[];
-  controls?: any;
-  width?: number;
-  height?: number;
+export interface State {
+  [key: string]: number;
 }
 
-export interface ExploreDescriptor {
-  type: 'explore';
-  model: any;
-  params: any; // Keep as any for compatibility with SerializedParams
-  initial: string;
-  views: {
-    view: string;
-    viewDescriptor: any;
-  }[];
-  options: {
-    timeRange?: [number, number];
-    timeStep?: number;
-    width: number | string;
-    height: number | string;
-  };
+export interface Params {
+  [key: string]: number;
 }
 
-export interface ShowDescriptor {
-  type: 'show';
-  views: {
-    type: 'show';
-    timeline: {
-      times: number[];
-      states: Record<string, number[]>;
-    };
-    layers: any;
-    controls?: any;
-    width?: number | string;
-    height?: number | string;
-  }[];
-  layout?: {
-    columns?: number;
-    rows?: number;
-    gaps?: number;
-  };
-  width?: number | string;
-  height?: number | string;
+export interface Derivatives {
+  [key: string]: (state: State, params: Params) => number;
 }
 
-export interface CompareDescriptor {
-  type: 'compare';
-  timeline: {
-    times: number[];
-    states: Record<string, number[]>;
-    labels: string[];
-  };
-  layers: any[];
-  labels: string[];
-  width?: number | string;
-  height?: number | string;
+export interface Event {
+  when: (state: State) => number;
+  then: (state: State, params: Params) => State | null; // null = remove event
+  once?: boolean; // triggers only once
 }
 
-export type AnyDescriptor =
-  | ViewDescriptor
-  | ExploreDescriptor
-  | CompareDescriptor
-  | ShowDescriptor;
+export interface Events {
+  [key: string]: Event;
+}
+
+export interface Model {
+  state: State;
+  params: Params;
+  derivatives: Derivatives;
+  events?: Events;
+}
+
+export interface SimulationOptions {
+  timeRange?: [number, number];
+  timeStep?: number;
+  tolerance?: number;
+  params?: Params;
+}
+
+export interface Timeline {
+  times: number[];
+  states: Record<string, number[]>;
+  at: (time: number) => State;
+  serialize: () => string;
+}

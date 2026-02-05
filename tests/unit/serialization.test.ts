@@ -121,6 +121,60 @@ describe('FunctionSerializer - Parsing Different Function Formats', () => {
   });
 });
 
+describe('FunctionSerializer - Parameter Auto-Detection', () => {
+  test('detects functions with parameters', () => {
+    // Given: function that uses parameters
+    const selectorWithParams = '(s, p) => s.x * p.amplitude';
+    
+    // When: creating with params
+    const fnWithParams = FunctionSerializer.parseAndCreateFunction(['s', 'p'], selectorWithParams);
+    
+    // Then: should work with parameters
+    expect(fnWithParams({ x: 2 }, { amplitude: 3 })).toBe(6);
+  });
+
+  test('detects functions without parameters', () => {
+    // Given: function that doesn't use parameters
+    const selectorWithoutParams = '(s) => s.x * 2';
+    
+    // When: creating without params
+    const fnWithoutParams = FunctionSerializer.parseAndCreateFunction(['s'], selectorWithoutParams);
+    
+    // Then: should work without parameters
+    expect(fnWithoutParams({ x: 2 })).toBe(4);
+  });
+
+  test('handles fallback from params to no-params', () => {
+    // Given: function defined without params
+    const selector = '(s) => s.x';
+    
+    // When: trying to create with params (creates function but p will be undefined)
+    const fnWithParams = FunctionSerializer.parseAndCreateFunction(['s', 'p'], selector);
+    
+    // Then: should work but ignore extra parameter
+    expect(fnWithParams({ x: 5 }, { amplitude: 3 })).toBe(5); // p is undefined/ignored
+    
+    // When: creating correctly without params
+    const fn = FunctionSerializer.parseAndCreateFunction(['s'], selector);
+    
+    // Then: should work without params
+    expect(fn({ x: 5 })).toBe(5);
+  });
+
+  test('handles parametric plot detection with params', () => {
+    // Given: parametric function with params
+    const parametricSelector = '(s, p) => [s.x * p.scale, s.y * p.scale]';
+    
+    // When: creating and testing
+    const fn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], parametricSelector);
+    const result = fn({ x: 1, y: 2 }, { scale: 3 });
+    
+    // Then: should return array for parametric plot
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toEqual([3, 6]);
+  });
+});
+
 describe('Model Serialization', () => {
   test('serializes complete model with events', () => {
     // Given: mathematical model with boundary conditions

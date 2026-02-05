@@ -6,7 +6,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { SimpleViewBuilder, scene, plot, grid, axis } from '../../src/lib/builders/SimpleViewBuilder';
 import { ViewBuilder } from '../../src/lib/builders/ViewBuilder';
-import { Timeline } from '../../src/core/ivp';
+import { Timeline } from '../../src/core/types';
 
 // Mock ViewBuilder
 const mockViewBuilderMethods = {
@@ -53,7 +53,7 @@ describe('SimpleViewBuilder - Convenience API', () => {
     builder.execute({} as Timeline);
 
     expect(mockViewBuilderMethods.scene).toHaveBeenCalledWith(drawFn);
-    expect(mockViewBuilderMethods.plot).toHaveBeenCalledWith(selector, undefined);
+    expect(mockViewBuilderMethods.plot).toHaveBeenCalledWith(selector, {});
   });
 });
 

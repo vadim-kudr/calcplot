@@ -2,8 +2,8 @@
  * Fluent API for simulation setup and execution
  */
 
-import { Model, Params, SimulationOptions, State } from './ivp';
 import { solve } from './solver';
+import type { Model, Params, SimulationOptions, State } from './types';
 import { Timeline } from './timeline';
 
 export interface SimulateConfig {

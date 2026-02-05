@@ -210,8 +210,8 @@ export class ViewRenderer {
     
     this.svgManager.updateDomains(finalBounds.x, finalBounds.y, aspectRatio);
 
-    // Get updated context
-    const updatedContext = this.svgManager.getContext();
+    // Get updated context with parameters
+    const updatedContext = this.svgManager.getContext(data.params);
     
     // Add margins to context for all renderers
     updatedContext.margins = D3ScaleFactory.getProportionalMargins(updatedContext.width, updatedContext.height);
@@ -342,7 +342,7 @@ export class ViewRenderer {
    * Get current render context
    */
   getRenderContext(): RenderContext {
-    return this.svgManager.getContext();
+    return this.svgManager.getContext(this.currentData?.params);
   }
 
   /**

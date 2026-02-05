@@ -3,11 +3,11 @@
  * For comparing multiple simulations side by side
  */
 
-import { Timeline } from '../core/ivp';
-import { renderToHTML } from './utils/renderToHTML';
-import { displayHTML } from './utils/displayHTML';
-import { loadClientBundle } from './utils/bundleLoader';
-import { ViewBuilder } from './builders/ViewBuilder';
+import type { Timeline } from '../../core/types';
+import { renderToHTML } from '../utils/renderToHTML';
+import { displayHTML } from '../utils/displayHTML';
+import { loadClientBundle } from '../utils/bundleLoader';
+import { ViewBuilder } from '../builders/ViewBuilder';
 
 export interface CompareConfig {
   [label: string]: Timeline;

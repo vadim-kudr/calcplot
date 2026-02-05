@@ -2,7 +2,7 @@
  * Enhanced RK4 solver with advanced event detection and lifecycle management
  */
 
-import { Event, Model, Params, SimulationOptions, State } from './ivp';
+import type { Event, Model, Params, SimulationOptions, State } from './types';
 
 const EPSILON = 1e-9;
 const MAX_BISECTION_ITER = 40;

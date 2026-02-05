@@ -3,9 +3,27 @@
  */
 
 import { createElement } from '../utils/html-tag';
+import { SliderControl, CheckboxControl } from '../../lib/controls';
+import { ExploreDescriptor } from '../../lib/types';
 
-import { ExploreDescriptor } from '../../core/types';
-import { Control, SliderControl, CheckboxControl } from '../../lib/controls';
+// Runtime interfaces for dynamic controls
+interface RuntimeSliderControl extends SliderControl {
+  value?: number;
+}
+
+interface RuntimeCheckboxControl extends CheckboxControl {
+  value?: boolean;
+}
+
+type RuntimeControl = RuntimeSliderControl | RuntimeCheckboxControl;
+
+interface RuntimeParams {
+  [key: string]: RuntimeControl;
+}
+
+interface RuntimeExploreData extends ExploreDescriptor {
+  params: RuntimeParams;
+}
 
 // Helper function to resolve dimensions
 export function resolveDimension(value: any, container: HTMLElement, fallback: number, useClientWidth = false): number {
@@ -21,10 +39,8 @@ export function resolveDimension(value: any, container: HTMLElement, fallback: n
 }
 
 // Create controls for explore mode
-// Note: data is typed as any because runtime controls have dynamic 'value' property
-// that doesn't exist in the static Control interface
 export function createControls(
-  data: any, // Runtime data with dynamic value properties
+  data: RuntimeExploreData,
   container: HTMLElement,
   options?: {
     log?: (...args: any[]) => void;
@@ -87,7 +103,16 @@ export function createControls(
   });
   container.appendChild(controlsDiv);
 
-  Object.entries(data.params).forEach(([key, param]: [string, any]) => {
+  // Initialize values from defaults
+  Object.entries(data.params).forEach(([key, param]) => {
+    if (param.type === 'slider') {
+      (param as RuntimeSliderControl).value = param.default;
+    } else if (param.type === 'checkbox') {
+      (param as RuntimeCheckboxControl).value = param.default;
+    }
+  });
+
+  Object.entries(data.params).forEach(([key, param]: [string, RuntimeControl]) => {
     if (param.type === 'slider') {
       const createSlider = (window as any).CalcPlotComponents.createSlider;
       if (createSlider) {
@@ -129,27 +154,16 @@ export function createControls(
 }
 
 // Get current parameter values from controls
-// Note: data is typed as any because runtime controls have dynamic 'value' property
-export function getParameters(data: any): Record<string, any> {
-  const params: Record<string, any> = {};
+export function getParameters(data: RuntimeExploreData): Record<string, number | boolean> {
+  const params: Record<string, number | boolean> = {};
   
-  Object.entries(data.params).forEach(([key, param]: [string, any]) => {
+  Object.entries(data.params).forEach(([key, param]: [string, RuntimeControl]) => {
     if (param.type === 'slider') {
-      const slider = document.getElementById(`input-${key}`) as HTMLInputElement;
-      if (slider && slider.value !== '' && !isNaN(parseFloat(slider.value))) {
-        params[key] = parseFloat(slider.value);
-      } else {
-        params[key] = param.default;
-      }
+      const sliderParam = param as RuntimeSliderControl;
+      params[key] = sliderParam.value !== undefined ? sliderParam.value : sliderParam.default;
     } else if (param.type === 'checkbox') {
-      const checkbox = document.getElementById(`input-${key}`) as HTMLInputElement;
-      if (checkbox) {
-        params[key] = checkbox.checked;
-      } else {
-        params[key] = param.default;
-      }
-    } else {
-      params[key] = param.default;
+      const checkboxParam = param as RuntimeCheckboxControl;
+      params[key] = checkboxParam.value !== undefined ? checkboxParam.value : checkboxParam.default;
     }
   });
   

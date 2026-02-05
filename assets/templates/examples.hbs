@@ -69,10 +69,6 @@
 
     <script src="/calcplot.js"></script>
     <script>
-        // Debug: Check if CalcPlot is loaded
-        console.log('CalcPlot object:', typeof CalcPlot);
-        console.log('CalcPlot keys:', Object.keys(CalcPlot || {}));
-        
         // Export CalcPlot functions to window
         if (typeof CalcPlot !== 'undefined') {
             window.defineIVP = CalcPlot.defineIVP;

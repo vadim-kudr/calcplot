@@ -2,7 +2,7 @@
  * Timeline class for storing and accessing simulation results
  */
 
-import { State, Timeline as TimelineInterface } from './ivp';
+import { State, Timeline as TimelineInterface } from './types';
 
 export class Timeline implements TimelineInterface {
   public readonly times: number[];

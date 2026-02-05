@@ -3,11 +3,11 @@
  * For fast viewing of simulation results
  */
 
-import { Timeline } from '../core/ivp';
-import { renderToHTML } from './utils/renderToHTML';
-import { displayHTML } from './utils/displayHTML';
-import { loadClientBundle } from './utils/bundleLoader';
-import { ViewBuilder } from './builders/ViewBuilder';
+import { Timeline } from '../../core/types';
+import { renderToHTML } from '../utils/renderToHTML';
+import { displayHTML } from '../utils/displayHTML';
+import { loadClientBundle } from '../utils/bundleLoader';
+import { ViewBuilder } from '../builders/ViewBuilder';
 
 export interface ShowOptions {
   width?: number | string;

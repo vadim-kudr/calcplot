@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { defineIVP } from '../../src/core/ivp';
+import { defineIVP } from '../../src/core/defineIVP';
 import { simulate } from '../../src/core/simulate';
 import { view } from '../../src/lib/builders/ViewBuilder';
 import { explore } from '../../src/lib/explore';

@@ -5,28 +5,8 @@
 
 import { LayerRenderer } from '../interfaces';
 import { RenderContext } from '../interfaces/RenderContext';
-import { D3ScaleFactory } from '../utils/D3ScaleFactory';
 import { TickCalculator } from '../utils/TickCalculator';
-
-/**
- * Axis options interface
- */
-export interface AxisOptions {
-  showTicks?: boolean;
-  showLabels?: boolean;
-  showSpine?: boolean;
-  tickSize?: number;
-  tickPadding?: number;
-  labelPadding?: number;
-  fontSize?: number;
-  fontColor?: string;
-  tickColor?: string;
-  labelColor?: string;
-  axisColor?: string;
-  axisWidth?: number;
-  xLabel?: string;
-  yLabel?: string;
-}
+import { AxisOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class AxisRenderer implements LayerRenderer {
   render(layer: any, context: RenderContext): void {

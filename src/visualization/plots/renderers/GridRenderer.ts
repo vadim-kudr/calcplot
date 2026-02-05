@@ -7,7 +7,6 @@ import * as d3 from 'd3';
 import { LayerRenderer } from '../interfaces';
 import { RenderContext } from '../interfaces/RenderContext';
 import { TickCalculator } from '../utils/TickCalculator';
-import { D3ScaleFactory } from '../utils/D3ScaleFactory';
 
 /**
  * Grid options interface
