@@ -1,6 +1,6 @@
 {
   "name": "calcplot",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "CalcPlot - Interactive calculation and plotting library for mathematical visualization",
   "main": "dist/lib/index.js",
