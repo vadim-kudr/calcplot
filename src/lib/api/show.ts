@@ -10,27 +10,32 @@ import { loadClientBundle } from '../utils/bundleLoader';
 import { ViewBuilder } from '../builders/ViewBuilder';
 
 export interface ShowOptions {
+  /** Container width (default: 'auto') */
   width?: number | string;
+  /** Container height in pixels (default: auto) */
   height?: number | string;
+  /** Target element or ID for rendering (default: creates new element) */
   target?: string | HTMLElement;
-  layout?: {
-    columns?: number;
-    rows?: number;
-    gaps?: number;
-  };
 }
 
 /**
- * Quick visualization - one liner for simple viewing
- *
- * Usage:
- * show(timeline, view().plot(s => s.y));
- *
- * Multi-panel:
- * show(timeline, [
- *   view().plot(s => s.y),
- *   view().grid().axis().plot(s => s.vx)
+ * Creates a quick visualization of simulation results.
+ * 
+ * @param timeline - Simulation results from simulate() function
+ * @param viewConfig - Visualization configuration (single or multiple views)
+ * @param options - Display options
+ * 
+ * @returns Promise that resolves when visualization is rendered
+ * 
+ * @example
+ * ```javascript
+ * // Multiple views in a grid
+ * await show(timeline, [
+ *   view().plot((s) => s.x).axis('Time', 'Position'),
+ *   view().plot((s) => s.v).axis('Time', 'Velocity'),
+ *   view().plot((s) => [s.x, s.v]).axis('Position', 'Velocity')
  * ]);
+ * ```
  */
 export async function show(
   timeline: Timeline,
@@ -52,18 +57,13 @@ export async function show(
         states: timeline.states
       },
       layers: descriptor.layers,
-      controls: [] // show mode doesn't have controls
+      controls: {} // show mode doesn't have controls
     };
   });
 
   const descriptor = {
     type: 'show' as const,
     views: views,
-    layout: options.layout || {
-      columns: viewConfigs.length,
-      rows: 1,
-      gaps: 10
-    },
     width: options.width,
     height: options.height
   };

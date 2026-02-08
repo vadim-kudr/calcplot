@@ -9,6 +9,7 @@ import { view } from '../lib/builders/ViewBuilder';
 import { initializeExplore } from './managers/ExploreManager';
 import { initializeShow } from './managers/ShowManager';
 import { initializeCompare } from './managers/CompareManager';
+import { AnyDescriptor } from '../lib/types';
 
 // Make components available globally for client
 if (typeof globalThis !== 'undefined') {
@@ -22,12 +23,12 @@ if (typeof globalThis !== 'undefined') {
 // Main initialization function
 export function initializeClient(
   container: HTMLElement,
-  data?: any,
-  debugLog?: (...args: any[]) => void
+  data?: AnyDescriptor,
+  debugLog?: (...args: unknown[]) => void
 ): void {
   const log =
     debugLog ||
-    function (...args: any[]) {
+    function (...args: unknown[]) {
       console.log('[calcplot]', ...args);
     };
 
@@ -43,13 +44,17 @@ export function initializeClient(
   }
 
   // Handle different data types
-  if (calcData.type === 'explore') {
-    initializeExplore(calcData, container, log);
-  } else if (calcData.type === 'show') {
-    initializeShow(calcData, container, log);
-  } else if (calcData.type === 'compare') {
-    initializeCompare(calcData, container, log);
+  if (calcData && 'type' in calcData) {
+    if (calcData.type === 'explore') {
+      initializeExplore(calcData as any, container, log);
+    } else if (calcData.type === 'show') {
+      initializeShow(calcData as any, container, log);
+    } else if (calcData.type === 'compare') {
+      initializeCompare(calcData as any, container, log);
+    } else {
+      log('Unknown data type:', (calcData as any).type);
+    }
   } else {
-    log('Unknown data type:', calcData.type);
+    log('Invalid data format - missing type property');
   }
 }

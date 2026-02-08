@@ -2,16 +2,8 @@
  * VectorFieldRenderer - Renders vector field visualizations
  */
 
-export interface VectorFieldOptions {
-  gridSize?: number;
-  color?: string;
-  alpha?: number;
-  normalize?: boolean;
-  scale?: number;
-}
-
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer } from '../../../lib';
+import { Layer, VectorFieldOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class VectorFieldRenderer implements LayerRenderer {
   render(layer: Layer, context: RenderContext): void {
@@ -23,7 +15,8 @@ export class VectorFieldRenderer implements LayerRenderer {
     // Parse the vector field function
     const vectorFn = new Function('state', 'params', `return ${selector}`) as (state: any, params: any) => { dx: number; dy: number };
 
-    const { gridSize = 20, color = 'gray', alpha = 0.6, normalize = true, scale = 1 } = options;
+    const vectorFieldOptions = options as VectorFieldOptions;
+    const { gridSize = 20, color = 'gray', alpha = 0.6, normalize = true, scale = 1 } = vectorFieldOptions;
 
     // Create grid of vector arrows
     const xRange = xScale.domain();

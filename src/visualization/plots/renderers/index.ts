@@ -16,13 +16,8 @@ export { VectorFieldRenderer } from './VectorFieldRenderer';
 export { NullclineRenderer } from './NullclineRenderer';
 export { PoincareRenderer } from './PoincareRenderer';
 
+// Export types that are not in BuilderInterfaces
 export type { PlotOptions } from './PlotRenderer';
 export type { VectorOptions } from './VectorRenderer';
 export type { SceneOptions } from './SceneRenderer';
-export type { LegendOptions, LegendItem } from './LegendRenderer';
-export type { FillOptions } from './FillRenderer';
-export type { RefLineOptions } from './RefLineRenderer';
-export type { TitleOptions } from './TitleRenderer';
-export type { VectorFieldOptions } from './VectorFieldRenderer';
-export type { NullclineOptions } from './NullclineRenderer';
-export type { PoincareOptions } from './PoincareRenderer';
+export type { LegendItem } from './LegendRenderer';

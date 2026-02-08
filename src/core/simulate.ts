@@ -7,7 +7,9 @@ import type { Model, Params, SimulationOptions, State } from './types';
 import { Timeline } from './timeline';
 
 export interface SimulateConfig {
+  /** Time range for simulation [start, end] */
   timeRange: [number, number];
+  /** Time step for numerical integration (default: 0.01) */
   timeStep?: number;
 }
 
@@ -22,6 +24,8 @@ export class SimulationBuilder {
 
   /**
    * Set initial state for simulation
+   * @param state - Initial values for state variables
+   * @returns This builder for chaining
    */
   initial(state: State): SimulationBuilder {
     this.initialState = state;
@@ -30,6 +34,8 @@ export class SimulationBuilder {
 
   /**
    * Set parameters for simulation
+   * @param params - Parameter values to override model defaults
+   * @returns This builder for chaining
    */
   params(params: Params): SimulationBuilder {
     this.modelParams = params;
@@ -38,6 +44,9 @@ export class SimulationBuilder {
 
   /**
    * Run simulation with given options
+   * @param options - Simulation options including timeRange and timeStep
+   * @returns Timeline containing simulation results
+   * @throws Error if initial state is not set
    */
   run(options: SimulationOptions = {}): Timeline {
     if (!this.initialState) {
@@ -54,7 +63,22 @@ export class SimulationBuilder {
 }
 
 /**
- * Simulation function with overloads
+ * Simulates a differential equation model using numerical integration.
+ * 
+ * @overload
+ * @param model - Model to simulate
+ * @param config - Simulation configuration
+ * @returns Timeline with results
+ * 
+ * @overload
+ * @param model - Model to simulate
+ * @returns SimulationBuilder for fluent API
+ * 
+ * @example
+ * const timeline = simulate(model)
+ *   .initial({ x: 1, v: 0 })
+ *   .params({ omega: 2, damping: 0.1 })
+ *   .run({ timeRange: [0, 20] });
  */
 
 // Overload 1: Simple simulate(model, config)

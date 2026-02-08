@@ -4,7 +4,8 @@
  */
 
 import { SerializedParams } from '../lib/types';
-import { SliderControl, CheckboxControl, Control } from '../lib/controls';
+import { Control } from '../lib/controls';
+import { State, Params, Derivatives, Events, Model, Timeline } from '../core/types';
 
 export interface SerializedModel {
   state: Record<string, number>;
@@ -70,14 +71,14 @@ export class FunctionSerializer {
   /**
    * Create function from parsed string
    */
-  static createFunction(params: string[], body: string): (...args: any[]) => any {
-    return new Function(...params, body) as (...args: any[]) => any;
+  static createFunction(params: string[], body: string): (...args: unknown[]) => unknown {
+    return new Function(...params, body) as (...args: unknown[]) => unknown;
   }
 
   /**
    * Parse and create function in one step
    */
-  static parseAndCreateFunction(params: string[], fnStr: string): (...args: any[]) => any {
+  static parseAndCreateFunction(params: string[], fnStr: string): (...args: unknown[]) => unknown {
     const parsedBody = this.parseFunction(fnStr);
     return this.createFunction(params, parsedBody);
   }
@@ -89,9 +90,9 @@ export class FunctionSerializer {
 /**
  * Serialize events for HTML embedding
  */
-export function serializeEvents(events: Record<string, any>): Record<string, string> {
+export function serializeEvents(events: Events): Record<string, string> {
   const serialized: Record<string, string> = {};
-  
+
   for (const [key, event] of Object.entries(events)) {
     if (event && typeof event.when === 'function' && typeof event.then === 'function') {
       serialized[key] = JSON.stringify({
@@ -103,11 +104,11 @@ export function serializeEvents(events: Record<string, any>): Record<string, str
       console.warn(`Invalid event ${key}: when and then must be functions`);
     }
   }
-  
+
   return serialized;
 }
 
-export function serializeModel(model: any): SerializedModel {
+export function serializeModel(model: Model): SerializedModel {
   return {
     state: model.state,
     params: model.params,
@@ -149,7 +150,7 @@ export function serializeParams(params?: Record<string, Control>): SerializedPar
 /**
  * Serialize timeline for HTML embedding
  */
-export function serializeTimeline(timeline: any): SerializedTimeline {
+export function serializeTimeline(timeline: Timeline): SerializedTimeline {
   return {
     times: timeline.times,
     states: timeline.states
@@ -174,10 +175,8 @@ export function deserializeParams(serializedParams: SerializedParams): Record<st
 /**
  * Deserialize events from JSON strings
  */
-export function deserializeEvents(
-  serialized: Record<string, string>
-): Record<string, any> {
-  const events: Record<string, any> = {};
+export function deserializeEvents(serialized: Record<string, string>): Events {
+  const events: Events = {};
   for (const [key, eventStr] of Object.entries(serialized)) {
     try {
       const eventObj = JSON.parse(eventStr);
@@ -198,10 +197,8 @@ export function deserializeEvents(
 /**
  * Deserialize functions from strings (simple functions only)
  */
-export function deserializeFunctions(
-  serialized: Record<string, string>
-): Record<string, any> {
-  const functions: Record<string, any> = {};
+export function deserializeFunctions(serialized: Record<string, string>): Derivatives {
+  const functions: Derivatives = {};
   for (const [key, fnStr] of Object.entries(serialized)) {
     try {
       // Handle simple function formats only
@@ -227,9 +224,11 @@ export function deserializeFunctions(
 /**
  * Helper: serialize object with functions
  */
-export function serializeFunctions(obj: Record<string, any>): Record<string, string> {
+export function serializeFunctions(
+  obj: Record<string, ((state: State, params: Params) => number) | string | number | boolean>
+): Record<string, string> {
   const serialized: Record<string, string> = {};
-  
+
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'function') {
       serialized[key] = value.toString();
@@ -239,6 +238,6 @@ export function serializeFunctions(obj: Record<string, any>): Record<string, str
       console.warn(`Skipping undefined/null value for key: ${key}`);
     }
   }
-  
+
   return serialized;
 }

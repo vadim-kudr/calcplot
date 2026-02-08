@@ -18,9 +18,9 @@ export interface SVGManagerOptions {
 export { ResizeManagerOptions };
 
 export class SVGManager {
-  private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
-  private g: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private scales: {
+  private svg?: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+  private g?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private scales?: {
     x: d3.ScaleLinear<number, number>;
     y: d3.ScaleLinear<number, number>;
   }; // Never undefined after constructor
@@ -71,10 +71,10 @@ export class SVGManager {
   getContext(params?: any): RenderContext {
     // Scales guaranteed to exist - return directly
     return {
-      svg: this.svg,
-      g: this.g,
-      xScale: this.scales.x, // Never undefined
-      yScale: this.scales.y, // Never undefined
+      svg: this.svg!,
+      g: this.g!,
+      xScale: this.scales!.x, // Never undefined
+      yScale: this.scales!.y, // Never undefined
       width: this.dimensions.width,
       height: this.dimensions.height,
       margins: {
@@ -92,7 +92,7 @@ export class SVGManager {
    */
   resize(width: number, height: number): void {
     // Update SVG size
-    this.svg.attr('width', width).attr('height', height);
+    this.svg!.attr('width', width).attr('height', height);
     
     // Update dimensions
     this.dimensions = D3ScaleFactory.calculateDimensions(
@@ -126,11 +126,11 @@ export class SVGManager {
       const xPadding = (plotWidth - size) / 2;
       const yPadding = (plotHeight - size) / 2;
       
-      this.scales.x.range([leftMargin + xPadding, this.dimensions.width - rightMargin - xPadding]);
-      this.scales.y.range([this.dimensions.height - bottomMargin - yPadding, topMargin + yPadding]);
+      this.scales!.x.range([leftMargin + xPadding, this.dimensions.width - rightMargin - xPadding]);
+      this.scales!.y.range([this.dimensions.height - bottomMargin - yPadding, topMargin + yPadding]);
     } else {
-      this.scales.x.range([leftMargin, this.dimensions.width - rightMargin]);
-      this.scales.y.range([this.dimensions.height - bottomMargin, topMargin]);
+      this.scales!.x.range([leftMargin, this.dimensions.width - rightMargin]);
+      this.scales!.y.range([this.dimensions.height - bottomMargin, topMargin]);
     }
   }
 
@@ -141,15 +141,15 @@ export class SVGManager {
     }
     
     // Update domains - scales guaranteed to exist
-    this.scales.x.domain(xDomain);
-    this.scales.y.domain(yDomain);
+    this.scales!.x.domain(xDomain);
+    this.scales!.y.domain(yDomain);
     
     // Update ranges with new aspect ratio
     this.updateScaleRanges();
   }
 
   clear(): void {
-    this.g.selectAll('*').remove();
+    this.g!.selectAll('*').remove();
   }
 
   getDimensions(): ChartDimensions {
@@ -157,6 +157,15 @@ export class SVGManager {
   }
 
   destroy(): void {
-    this.svg.remove();
+    // Remove SVG from DOM
+    const node = this.svg?.node();
+    if (node && node.parentNode) {
+      node.parentNode.removeChild(node);
+    }
+    
+    // Clear references to prevent memory leaks
+    this.svg = undefined;
+    this.g = undefined;
+    this.scales = undefined;
   }
 }

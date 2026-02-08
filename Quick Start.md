@@ -135,8 +135,12 @@ explore(model, {
 
 ### Control Types
 ```javascript
-slider(min, max, default, label, { step?, scale? })
-// scale: 'linear' | 'log'
+slider(min, max, default, label, step?, options?)
+// options.scale: 'linear' | 'log'
+
+// Examples
+slider(0, 1, 0.5, 'Parameter')
+slider(0.001, 1000, 1, 'Gain', 0.1, { scale: 'log' })
 ```
 
 ## 📈 Advanced Features

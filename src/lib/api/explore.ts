@@ -12,21 +12,48 @@ import { ViewBuilder } from '../builders/ViewBuilder';
 import { Control } from '../controls';
 
 export interface ExploreConfig {
+  /** Interactive parameter controls (sliders, checkboxes) */
   params?: Record<string, Control>;
+  /** Initial state or function to compute initial state from parameters */
   initial?: State | ((params?: Params) => State);
+  /** Time range for simulation [start, end] (default: [0, 10]) */
   timeRange?: [number, number];
+  /** Time step for numerical integration (default: 0.01) */
   timeStep?: number;
+  /** Visualization configuration - single view or array of views */
   view: ViewBuilder | ViewBuilder[];
 }
 
 export interface ExploreOptions {
+  /** Container width (default: 'auto') */
   width?: number | string;
+  /** Container height in pixels (default: 480) */
   height?: number | string;
+  /** Target element or ID for rendering (default: creates new element) */
   target?: string | HTMLElement;
 }
 
 /**
- * Interactive exploration with parameter controls
+ * Creates an interactive visualization with parameter controls.
+ * 
+ * @param model - The differential equation model (from defineIVP)
+ * @param config - Configuration for the exploration
+ * @param options - Display options
+ * 
+ * @returns Promise that resolves when visualization is rendered
+ * 
+ * @example
+ * ```javascript
+ * // Interactive harmonic oscillator
+ * await explore(oscillator, {
+ *   params: {
+ *     omega: slider(0.1, 5, 1, 'Frequency'),
+ *     damping: slider(0, 2, 0.1, 'Damping')
+ *   },
+ *   initial: (p) => ({ x: 1, v: 0 }),
+ *   view: view().plot((s) => s.x).axis('Time', 'Position').defaults()
+ * });
+ * ```
  */
 export async function explore(
   model: Model,

@@ -46,9 +46,10 @@ export async function displayHTML(
   } else if (isJupyter) {
     // Jupyter environment - just send HTML as is
     try {
-      if (typeof globalThis !== 'undefined' && (globalThis as any).Deno?.jupyter) {
+      const denoJupyter = (globalThis as unknown as { Deno?: { jupyter?: { broadcast: (type: string, data: unknown) => Promise<void> } } }).Deno?.jupyter;
+      if (denoJupyter) {
         // Use proper Jupyter broadcast API
-        await (globalThis as any).Deno.jupyter.broadcast('display_data', {
+        await denoJupyter.broadcast('display_data', {
           data: { 'text/html': html },
           metadata: {}
         });

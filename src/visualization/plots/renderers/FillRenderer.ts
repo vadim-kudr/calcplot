@@ -2,13 +2,8 @@
  * FillRenderer - Renders filled regions based on predicates
  */
 
-export interface FillOptions {
-  color?: string;
-  alpha?: number;
-}
-
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer } from '../../../lib';
+import { Layer, FillOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class FillRenderer implements LayerRenderer {
   render(layer: Layer, context: RenderContext): void {
@@ -20,7 +15,8 @@ export class FillRenderer implements LayerRenderer {
     // Parse the predicate function
     const predicateFn = new Function('state', `return ${selector}`) as (state: any) => boolean;
     
-    const { color = 'blue', alpha = 0.2 } = options;
+    const fillOptions = options as FillOptions;
+    const { color = 'blue', alpha = 0.2 } = fillOptions;
 
     // Get the current state from timeline if available
     const timeline = (context as any).timeline;

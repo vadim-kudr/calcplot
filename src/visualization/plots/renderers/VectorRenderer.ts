@@ -3,40 +3,45 @@
  */
 
 import * as d3 from 'd3';
-import { LayerRenderer } from '../interfaces';
-import { RenderContext } from '../interfaces/RenderContext';
+import { LayerRenderer, createSelectorFunction } from '../interfaces/LayerRenderer';
+import { RenderContext } from '../interfaces';
 import { FunctionSerializer } from '../../../simulation/serialization';
+import { Timeline, State, Params } from '../../../core/types';
 
 export interface VectorOptions {
   scale?: number;
   color?: string;
 }
 
+import { Layer } from '../../../lib/builders/BuilderInterfaces';
+
 export class VectorRenderer implements LayerRenderer {
-  render(layer: any, context: RenderContext, timeline?: any): void {
+  render(layer: { at: string; dir: string; options?: VectorOptions }, context: RenderContext, timeline?: Timeline): void {
     if (!timeline) return;
     
     const { at, dir, options = {} } = layer;
-
+    const scale = options?.scale ?? 1;
+    const color = options?.color ?? 'gray';
+    
     if (!at || !dir) {
       return;
     }
-
-    let atFn: (s: any, p?: any) => any;
-    let dirFn: (s: any, p?: any) => any;
+    
+    let atFn: (s: State, p?: Params) => [number, number];
+    let dirFn: (s: State, p?: Params) => [number, number];
     
     try {
       // Always try with params first
-      atFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], at) as (s: any, p: any) => any;
+      atFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], at) as (s: State, p?: Params) => [number, number];
     } catch {
-      atFn = FunctionSerializer.parseAndCreateFunction(['s'], at) as (s: any) => any;
+      atFn = FunctionSerializer.parseAndCreateFunction(['s'], at) as (s: State) => [number, number];
     }
     
     try {
       // Always try with params first
-      dirFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], dir) as (s: any, p: any) => any;
+      dirFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], dir) as (s: State, p?: Params) => [number, number];
     } catch {
-      dirFn = FunctionSerializer.parseAndCreateFunction(['s'], dir) as (s: any) => any;
+      dirFn = FunctionSerializer.parseAndCreateFunction(['s'], dir) as (s: State) => [number, number];
     }
 
     const vectors: Array<{x: number, y: number, vx: number, vy: number}> = [];

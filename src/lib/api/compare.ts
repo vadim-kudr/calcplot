@@ -4,30 +4,49 @@
  */
 
 import type { Timeline } from '../../core/types';
+import type { CompareDescriptor } from '../types';
+import type { Layer } from '../builders/BuilderInterfaces';
 import { renderToHTML } from '../utils/renderToHTML';
 import { displayHTML } from '../utils/displayHTML';
 import { loadClientBundle } from '../utils/bundleLoader';
 import { ViewBuilder } from '../builders/ViewBuilder';
 
 export interface CompareConfig {
+  /** Labeled timelines for comparison */
   [label: string]: Timeline;
 }
 
 export interface CompareOptions {
+  /** Container width (default: 'auto') */
   width?: number | string;
+  /** Container height in pixels (default: auto) */
   height?: number | string;
+  /** Target element or ID for rendering (default: creates new element) */
   target?: string | HTMLElement;
 }
 
 /**
- * Compare multiple simulations
- *
- * Usage:
- * compare({
- *   'No drag': simulate(Model).params({ k: 0 }).run(),
- *   'Light drag': simulate(Model).params({ k: 0.05 }).run(),
- *   'Heavy drag': simulate(Model).params({ k: 0.2 }).run()
- * }, view().plot(s => s.y));
+ * Compares multiple simulations side by side.
+ * 
+ * @param timelines - Object mapping labels to simulation timelines
+ * @param viewConfig - Visualization configuration applied to all timelines
+ * @param options - Display options
+ * 
+ * @returns Promise that resolves when visualization is rendered
+ * 
+ * @example
+ * ```javascript
+ * // Compare different damping values
+ * const noDrag = simulate(model).params({ damping: 0 }).run({ timeRange: [0, 10] });
+ * const lightDrag = simulate(model).params({ damping: 0.1 }).run({ timeRange: [0, 10] });
+ * const heavyDrag = simulate(model).params({ damping: 0.5 }).run({ timeRange: [0, 10] });
+ * 
+ * await compare({
+ *   'No damping': noDrag,
+ *   'Light damping': lightDrag,
+ *   'Heavy damping': heavyDrag
+ * }, view().plot((s) => s.x).axis('Time', 'Position'));
+ * ```
  */
 export async function compare(
   timelines: CompareConfig,
@@ -39,7 +58,7 @@ export async function compare(
 
   // Execute ViewBuilder with combined timeline
   const timelineDescriptor = viewConfig.executeWithTimeline(combinedTimeline);
-  const viewBuilder = { toDescriptor: () => timelineDescriptor } as any;
+  const viewBuilder = { toDescriptor: () => timelineDescriptor } as ViewBuilder;
 
   // Create compare descriptor
   const descriptor = createCompareDescriptor(combinedTimeline, viewBuilder, options);
@@ -54,11 +73,34 @@ export async function compare(
 /**
  * Create combined timeline from multiple timelines
  */
-function createCombinedTimeline(timelines: CompareConfig): any {
-  const combinedTimeline = {
+interface CombinedTimeline {
+  times: number[];
+  states: Record<string, number[]>;
+  labels: string[];
+  at: (time: number) => Record<string, number>;
+  serialize: () => string;
+}
+
+function createCombinedTimeline(timelines: CompareConfig): CombinedTimeline {
+  const combinedTimeline: CombinedTimeline = {
     times: [] as number[],
     states: {} as Record<string, number[]>,
-    labels: Object.keys(timelines)
+    labels: Object.keys(timelines),
+    at: function(time: number): Record<string, number> {
+      const result: Record<string, number> = {};
+      for (const [key, values] of Object.entries(this.states)) {
+        const index = Math.floor(time * (this.times.length - 1) / (Math.max(...this.times) - Math.min(...this.times)));
+        result[key] = values[Math.min(index, values.length - 1)];
+      }
+      return result;
+    },
+    serialize: function(): string {
+      return JSON.stringify({
+        times: this.times,
+        states: this.states,
+        labels: this.labels
+      });
+    }
   };
 
   // Merge timeline data
@@ -80,12 +122,12 @@ function createCombinedTimeline(timelines: CompareConfig): any {
  * Create descriptor for comparison visualization
  */
 function createCompareDescriptor(
-  combinedTimeline: any,
-  viewBuilder: any,
+  combinedTimeline: CombinedTimeline,
+  viewBuilder: ViewBuilder,
   options: { width?: number | string; height?: number | string }
-): any {
+): CompareDescriptor {
   // Extract all layers from view builder
-  let layers;
+  let layers: Layer[];
   if (viewBuilder.getLayers) {
     layers = viewBuilder.getLayers();
   } else if (viewBuilder.toDescriptor) {
@@ -98,10 +140,9 @@ function createCompareDescriptor(
 
   return {
     type: 'compare' as const,
-    timeline: combinedTimeline,
-    viewDescriptor: {
-      timeline: combinedTimeline,
-      layers: layers
+    timeline: {
+      times: combinedTimeline.times,
+      states: combinedTimeline.states
     },
     layers,
     labels: combinedTimeline.labels || [],

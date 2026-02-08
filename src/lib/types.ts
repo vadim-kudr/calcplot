@@ -1,5 +1,6 @@
 import type { Control } from "./controls";
-import type { Params } from "../core/types";
+import type { Params, State, Events } from "../core/types";
+import type { Layer } from "./builders/BuilderInterfaces";
 
 export interface SerializedParams {
   [key: string]: Control;
@@ -17,41 +18,18 @@ export interface SerializedTimeline {
   states: Record<string, number[]>;
 }
 
-// Descriptor types
-export interface ViewDescriptor {
+export interface ViewConfig {
+  layers: Layer[];
+  controls?: Record<string, unknown>;
+}
+
+export interface ViewDescriptor extends ViewConfig {
   timeline: {
     times: number[];
     states: Record<string, number[]>;
   };
-  layers: any[];
-  controls?: any;
   width?: number;
   height?: number;
-}
-
-export interface ExploreDescriptor {
-  type: 'explore';
-  model: {
-    params?: Params; // Default model parameters
-    derivatives?: Record<string, string>; // Serialized derivatives
-    events?: any; // Events
-    [key: string]: any;
-  };
-  params: SerializedParams; // Controls with their values
-  initial: string;
-  views: {
-    view: string;
-    viewDescriptor: {
-      layers?: any[];
-      [key: string]: any;
-    };
-  }[];
-  options: {
-    timeRange?: [number, number];
-    timeStep?: number;
-    width: number | string;
-    height: number | string;
-  };
 }
 
 export interface ShowDescriptor {
@@ -62,18 +40,33 @@ export interface ShowDescriptor {
       times: number[];
       states: Record<string, number[]>;
     };
-    layers: any;
-    controls?: any;
+    layers: Layer[];
+    controls?: Record<string, Control>;
     width?: number | string;
     height?: number | string;
   }[];
-  layout?: {
-    columns?: number;
-    rows?: number;
-    gaps?: number;
-  };
   width?: number | string;
   height?: number | string;
+}
+
+export interface ExploreDescriptor {
+  type: 'explore';
+  model: SerializedModel;
+  params: SerializedParams; // Controls with their values
+  initial: string;
+  views: {
+    view: string;
+    viewDescriptor: {
+      layers?: Layer[];
+      controls?: Record<string, unknown>;
+    };
+  }[];
+  options: {
+    timeRange?: [number, number];
+    timeStep?: number;
+    width?: number | string;
+    height?: number | string;
+  };
 }
 
 export interface CompareDescriptor {
@@ -82,7 +75,7 @@ export interface CompareDescriptor {
     times: number[];
     states: Record<string, number[]>;
   };
-  layers: any[];
+  layers: Layer[];
   labels: string[];
   width?: number | string;
   height?: number | string;

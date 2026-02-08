@@ -54,7 +54,7 @@ export function solve(
       const newState = event.then(eventState, params);
 
       // Event lifecycle management
-      if (newState === null || event.once) {
+      if (event.once) {
         activeEvents.delete(name);
       }
 

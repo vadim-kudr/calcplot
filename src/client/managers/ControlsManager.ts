@@ -26,7 +26,7 @@ interface RuntimeExploreData extends ExploreDescriptor {
 }
 
 // Helper function to resolve dimensions
-export function resolveDimension(value: any, container: HTMLElement, fallback: number, useClientWidth = false): number {
+export function resolveDimension(value: number | string | 'auto', container: HTMLElement, fallback: number, useClientWidth = false): number {
   if (value === 'auto' && useClientWidth) {
     const clientWidth = container.clientWidth;
     // If clientWidth is 0 (container not rendered yet), use fallback
@@ -43,7 +43,7 @@ export function createControls(
   data: RuntimeExploreData,
   container: HTMLElement,
   options?: {
-    log?: (...args: any[]) => void;
+    log?: (...args: unknown[]) => void;
     onUpdate?: () => void;
   }
 ): void {
@@ -114,7 +114,7 @@ export function createControls(
 
   Object.entries(data.params).forEach(([key, param]: [string, RuntimeControl]) => {
     if (param.type === 'slider') {
-      const createSlider = (window as any).CalcPlotComponents.createSlider;
+      const createSlider = (window as any).CalcPlotComponents?.createSlider;
       if (createSlider) {
         createSlider(controlsDiv, {
           id: key,
@@ -132,7 +132,7 @@ export function createControls(
         options?.log?.('createSlider not available');
       }
     } else if (param.type === 'checkbox') {
-      const createCheckbox = (window as any).CalcPlotComponents.createCheckbox;
+      const createCheckbox = (window as any).CalcPlotComponents?.createCheckbox;
       if (createCheckbox) {
         createCheckbox(controlsDiv, {
           id: key,

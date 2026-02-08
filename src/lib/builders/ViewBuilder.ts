@@ -2,7 +2,7 @@
  * Chainable API for building visualizations
  */
 
-import { State, Timeline } from '../../core/types';
+import { State, Params, Timeline } from '../../core/types';
 import { PlotOptions, AxisOptions, GridOptions, FillOptions, RefLineOptions, LegendOptions, VectorFieldOptions, PoincareOptions, NullclineOptions, VectorOptions, SceneFunction, VectorFunction, DrawContext, Layer, SelectorFunction, parsePlotArgs, parseAxisArgs } from './BuilderUtils';
 
 export class ViewBuilder {
@@ -53,7 +53,7 @@ export class ViewBuilder {
     return this;
   }
 
-  grid(options: any = {}): ViewBuilder {
+  grid(options: GridOptions = {}): ViewBuilder {
     this.layers.push({
       type: 'grid',
       options: options
@@ -64,7 +64,7 @@ export class ViewBuilder {
   /**
    * Add axis layer with flexible signature support
    */
-  axis(arg1?: string | number | any, arg2?: string, arg3?: number): ViewBuilder {
+  axis(arg1?: string | number | AxisOptions, arg2?: string, arg3?: number): ViewBuilder {
     const { options } = parseAxisArgs(arg1, arg2, arg3);
     this.layers.push({
       type: 'axis',
@@ -205,7 +205,7 @@ export class ViewBuilder {
   /**
    * Add vector field
    */
-  vectorField(vectorFn: (state: State, params: any) => { dx: number; dy: number }, options: VectorFieldOptions = {}): ViewBuilder {
+  vectorField(vectorFn: (state: State, params: Params) => { dx: number; dy: number }, options: VectorFieldOptions = {}): ViewBuilder {
     this.layers.push({
       type: 'vectorField',
       selector: this.serializeFunction(vectorFn),
@@ -256,7 +256,7 @@ export class ViewBuilder {
   }
 
   /**
-   * Add default grid and axes (calcplot-style defaults)
+   * Add default grid and axes
    */
   defaults(): ViewBuilder {
     return this.grid().axis();
@@ -286,8 +286,8 @@ export class ViewBuilder {
   /**
    * Serialize function or selector for HTML embedding
    */
-  private serializeFunction(fn: (...args: any[]) => any): string {
-    return fn.toString();
+  private serializeFunction(fn: SceneFunction | VectorFunction | SelectorFunction | ((state: State) => boolean) | ((state: State, params: Params) => { dx: number; dy: number })): string {
+    return fn ? fn.toString() : 'undefined';
   }
 
   /**
@@ -337,7 +337,24 @@ export class ViewBuilder {
 }
 
 /**
- * Main view function - now timeline-agnostic
+ * Creates a new ViewBuilder for constructing visualizations.
+ * 
+ * The ViewBuilder provides a fluent, chainable API for building
+ * mathematical visualizations. It supports multiple plot types,
+ * styling options, and layout configurations.
+ * 
+ * @param timeline - Optional timeline for immediate visualization (from simulate)
+ * @returns New ViewBuilder instance
+ * 
+ * @example
+ * ```javascript
+ * // Create builder without timeline (for explore)
+ * const builder = view();
+ * 
+ * // Create builder with timeline (for show)
+ * const timeline = simulate(model, { timeRange: [0, 10] });
+ * const builder = view(timeline);
+ * ```
  */
 export function view(timeline?: Timeline): ViewBuilder {
   return new ViewBuilder(timeline);

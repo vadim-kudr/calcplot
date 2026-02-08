@@ -7,29 +7,35 @@ import { LayerRendererFactory } from './LayerRendererFactory';
 import { BoundsCalculator, D3ScaleFactory } from '../utils';
 import type { RenderContext } from '../interfaces';
 import type { Bounds } from '../utils';
-
-let isCalcplotStylesLoading = false;
-let isCalcplotStylesLoaded = false;
+import type { Layer, PlotOptions, AxisOptions } from '../../../lib/builders/BuilderInterfaces';
+import type { Timeline, State, Params } from '../../../core/types';
+import type { ViewDescriptor } from '../../../lib/types';
 
 export interface VisualizationData {
   type: 'view' | 'explore';
-  timeline?: any;
-  layers?: any;
-  params?: any;
-  viewDescriptor?: any;
-  options?: any;
+  timeline?: Timeline;
+  layers?: Layer[];
+  params?: Params;
+  viewDescriptor?: {
+    layers?: Layer[];
+    controls?: Record<string, unknown>;
+  };
+  options?: Record<string, unknown>;
   width?: number;
   height?: number;
 }
 
 export class ViewRenderer {
+  private static isCalcplotStylesLoading = false;
+  private static isCalcplotStylesLoaded = false;
+
   private container: HTMLElement;
   private svgManager: SVGManager;
   private resizeManager: ResizeManager;
   private layerRendererFactory: LayerRendererFactory;
   private boundsCalculator: typeof BoundsCalculator;
   private currentData?: VisualizationData;
-  private log: (...args: any[]) => void;
+  private log: (...args: unknown[]) => void;
   
   // Resize control mechanism
   private isResizing = false;
@@ -41,7 +47,7 @@ export class ViewRenderer {
     container: HTMLElement,
     width: number = 800,
     height: number = 480,
-    log: (...args: any[]) => void
+    log: (...args: unknown[]) => void
   ) {
     this.container = container;
     this.log = log;
@@ -75,12 +81,12 @@ export class ViewRenderer {
     }
     
     // Check if styles are already loaded or loading
-    if (isCalcplotStylesLoaded || isCalcplotStylesLoading) {
+    if (ViewRenderer.isCalcplotStylesLoaded || ViewRenderer.isCalcplotStylesLoading) {
       return;
     }
 
     // Set loading flag
-    isCalcplotStylesLoading = true;
+    ViewRenderer.isCalcplotStylesLoading = true;
 
     // Import CSS dynamically from dist path
     fetch('/dist/calcplot-client.css')
@@ -99,11 +105,11 @@ export class ViewRenderer {
       document.head.appendChild(style);
       
       // Set loaded flag
-      isCalcplotStylesLoaded = true;
-      isCalcplotStylesLoading = false;
+      ViewRenderer.isCalcplotStylesLoaded = true;
+      ViewRenderer.isCalcplotStylesLoading = false;
     }).catch((error) => {
       console.warn('Failed to load calcplot styles:', error);
-      isCalcplotStylesLoading = false;
+      ViewRenderer.isCalcplotStylesLoading = false;
     });
   }
 
@@ -162,8 +168,9 @@ export class ViewRenderer {
   /**
    * Extract layers from visualization data
    */
-  private extractLayers(data: VisualizationData): any[] {
+  private extractLayers(data: VisualizationData): Layer[] {
     let layers = data.layers || [];
+    
     if (data.viewDescriptor && data.viewDescriptor.layers) {
       layers = data.viewDescriptor.layers;
     }
@@ -183,12 +190,15 @@ export class ViewRenderer {
 
     // Calculate bounds
     let finalBounds: Bounds;
-    const boundsLayer = layers.find((layer: any) => layer.type === 'bounds');
+    const boundsLayer = layers.find((layer: Layer) => layer.type === 'bounds');
 
-    if (boundsLayer && boundsLayer.bounds) {
-      finalBounds = boundsLayer.bounds;
+    if (boundsLayer && boundsLayer.bounds && typeof boundsLayer.bounds.x !== 'string' && typeof boundsLayer.bounds.y !== 'string') {
+      finalBounds = boundsLayer.bounds as Bounds;
     } else {
-      finalBounds = this.boundsCalculator.calculateBoundsFromTimeline(data.timeline, layers);
+      finalBounds = this.boundsCalculator.calculateBoundsFromTimeline(
+      data.timeline || { times: [], states: {} } as unknown as Timeline, 
+      layers
+    );
     }
 
     // Check bounds validity and ensure positive dimensions
@@ -205,13 +215,13 @@ export class ViewRenderer {
 
     // Update scales with new bounds
     // Extract aspectRatio from axis layer if present
-    const axisLayer = layers.find((layer: any) => layer.type === 'axis');
-    const aspectRatio = axisLayer?.options?.aspectRatio;
+    const axisLayer = layers.find((layer: Layer) => layer.type === 'axis');
+    const aspectRatio = (axisLayer?.options as AxisOptions)?.aspectRatio?.toString();
     
     this.svgManager.updateDomains(finalBounds.x, finalBounds.y, aspectRatio);
 
     // Get updated context with parameters
-    const updatedContext = this.svgManager.getContext(data.params);
+    const updatedContext = this.svgManager.getContext(data.params as any);
     
     // Add margins to context for all renderers
     updatedContext.margins = D3ScaleFactory.getProportionalMargins(updatedContext.width, updatedContext.height);
@@ -220,12 +230,17 @@ export class ViewRenderer {
     this.renderLayers(layers, updatedContext, data.timeline);
   }
 
-  private renderLayers(layers: any[], context: RenderContext, timeline?: any): void {
+  private renderLayers(layers: Layer[], context: RenderContext, timeline?: Timeline): void {
     // Group layers by type for batch processing
-    const layersByType = new Map<string, any[]>();
+    const layersByType = new Map<string, Layer[]>();
 
     // Collect legend items from plot layers
-    const legendItems: any[] = [];
+    const legendItems: Array<{
+      label: string;
+      color: string;
+      dash: number[];
+      lineWidth: number;
+    }> = [];
 
     layers.forEach((layer) => {
       if (!layersByType.has(layer.type)) {
@@ -233,12 +248,14 @@ export class ViewRenderer {
       }
 
       // Collect legend items from plot layers
-      if (layer.type === 'plot' && layer.options?.label) {
+      if (layer.type === 'plot' && layer.options && 'label' in layer.options && layer.options.label) {
+        const plotOptions = layer.options as PlotOptions;
+        const layerWithIndex = layer as Layer & { index?: number };
         legendItems.push({
-          label: layer.options.label,
-          color: layer.options?.color || `hsl(${(layer.index || 0) * 60}, 70%, 50%)`,
-          dash: layer.options?.dash || [],
-          lineWidth: layer.options?.lineWidth || 2
+          label: plotOptions.label!,
+          color: plotOptions.color || `hsl(${(layerWithIndex.index || 0) * 60}, 70%, 50%)`,
+          dash: plotOptions.dash || [],
+          lineWidth: plotOptions.lineWidth || 2
         });
       }
 
@@ -252,8 +269,8 @@ export class ViewRenderer {
       }
       layersByType.get('legend')!.push({
         type: 'legend',
-        items: legendItems,
         options: {
+          items: legendItems,
           position: 'top-right',
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderColor: '#ccc',
@@ -262,7 +279,7 @@ export class ViewRenderer {
           fontSize: 12,
           fontColor: '#333'
         }
-      });
+      } as Layer & { options: { items: typeof legendItems } & Record<string, unknown> });
     }
 
     // Define rendering order: title -> axis -> grid -> vectorField -> nullcline -> fill -> plot -> refline -> poincare -> legend
@@ -314,7 +331,7 @@ export class ViewRenderer {
   /**
    * Render explore data
    */
-  renderExplore(data: VisualizationData, timeline: any): void {
+  renderExplore(data: VisualizationData, timeline: Timeline): void {
     this.render({
       type: 'view',
       timeline: timeline,
@@ -356,6 +373,7 @@ export class ViewRenderer {
    * Destroy the renderer and clean up resources
    */
   destroy(): void {
+    this.svgManager.destroy();
     this.resizeManager.destroy();
     this.currentData = undefined;
   }

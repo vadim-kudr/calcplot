@@ -23,15 +23,18 @@ export type {
   Layer
 } from './BuilderInterfaces';
 
+// Import for internal use
+import { PlotOptions, AxisOptions } from './BuilderInterfaces';
+
 /**
  * Parse plot arguments with flexible signatures
  */
 export function parsePlotArgs(
   selector: SelectorFunction,
-  arg2?: string | any,
+  arg2?: string | PlotOptions,
   arg3?: string
-): { selector: SelectorFunction; options: any } {
-  let options: any = {};
+): { selector: SelectorFunction; options: PlotOptions } {
+  let options: PlotOptions = {};
   
   if (arg2 === undefined) {
     // plot(selector) - use defaults
@@ -60,11 +63,11 @@ export function parsePlotArgs(
  * Parse axis arguments with flexible signatures
  */
 export function parseAxisArgs(
-  arg1?: string | number | any,
+  arg1?: string | number | AxisOptions,
   arg2?: string,
   arg3?: number
-): { options: any } {
-  let options: any = {};
+): { options: AxisOptions } {
+  let options: AxisOptions = {};
   
   if (arg1 === undefined) {
     // axis() - use defaults

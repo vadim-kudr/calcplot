@@ -29,18 +29,18 @@ export function detectEnvironment(): Environment {
 
 export function detectEnvironmentDetails(): EnvironmentDetails {
   // Check for Deno
-  const isDeno = typeof (globalThis as any).Deno !== 'undefined';
+  const isDeno = typeof (globalThis as unknown as { Deno?: unknown }).Deno !== 'undefined';
 
   // Check for Jupyter (within Deno)
-  const isJupyter = isDeno && typeof ((globalThis as any).Deno as any).jupyter !== 'undefined';
+  const isJupyter = isDeno && typeof ((globalThis as unknown as { Deno?: { jupyter?: unknown } }).Deno?.jupyter) !== 'undefined';
 
   // Check for browser
   const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
   // Check for Node.js
   const isNode =
-    typeof (globalThis as any).process !== 'undefined' &&
-    (globalThis as any).process.versions?.node;
+    typeof (globalThis as unknown as { process?: { versions?: { node?: string } } }).process !== 'undefined' &&
+    (globalThis as unknown as { process?: { versions?: { node?: string } } }).process?.versions?.node;
 
   return {
     isDeno,

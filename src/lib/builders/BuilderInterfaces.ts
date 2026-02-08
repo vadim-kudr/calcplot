@@ -5,6 +5,10 @@
 import { State, Params } from '../../core/types';
 
 export interface GridOptions {
+  showGrid?: boolean;
+  gridColor?: string;
+  gridOpacity?: number;
+  gridWidth?: number;
   color?: string;
   alpha?: number;
   spacing?: number;
@@ -42,6 +46,8 @@ export interface FillOptions {
 }
 
 export interface RefLineOptions {
+  orientation?: 'horizontal' | 'vertical';
+  value?: number;
   color?: string;
   linestyle?: 'solid' | 'dashed' | 'dotted';
   linewidth?: number;
@@ -79,12 +85,34 @@ export interface NullclineOptions {
   label?: string;
 }
 
+export interface TitleOptions {
+  text?: string;
+  color?: string;
+  size?: number;
+  font?: string;
+  position?: 'top' | 'bottom' | 'center';
+}
+
 export interface VectorOptions {
   color?: string;
   label?: string;
   scale?: number;
   width?: number;
 }
+
+export type LayerOptions = 
+  | GridOptions 
+  | PlotOptions 
+  | AxisOptions 
+  | FillOptions 
+  | RefLineOptions 
+  | LegendOptions 
+  | VectorFieldOptions 
+  | NullclineOptions 
+  | PoincareOptions 
+  | VectorOptions 
+  | TitleOptions 
+  | Record<string, unknown>;
 
 export interface SceneFunction {
   (ctx: DrawContext, state: State): void;
@@ -126,7 +154,7 @@ export interface DrawContext {
 
 export interface Layer {
   type: 'grid' | 'scene' | 'plot' | 'vector' | 'bounds' | 'axis' | 'fill' | 'refline' | 'title' | 'legend' | 'vectorField' | 'nullcline' | 'poincare';
-  options?: any;
+  options?: LayerOptions;
   draw?: string; // serialized function
   selector?: string; // serialized function
   at?: string; // serialized function

@@ -3,7 +3,7 @@
  * Based on LAYOUT.md recommendations
  */
 
-import { PlotOptions, SceneFunction, SelectorFunction, parsePlotArgs, parseAxisArgs } from './BuilderUtils';
+import { PlotOptions, SceneFunction, SelectorFunction, parsePlotArgs, parseAxisArgs, GridOptions, AxisOptions } from './BuilderUtils';
 import { ViewBuilder } from './ViewBuilder';
 import type { Timeline } from '../../core/types';
 
@@ -11,8 +11,8 @@ export class SimpleViewBuilder {
   private layers: Array<{
     type: string;
     method: string;
-    args: any[];
-    options?: any;
+    args: (SceneFunction | SelectorFunction | GridOptions | AxisOptions | PlotOptions | undefined)[];
+    options?: GridOptions | AxisOptions | PlotOptions;
   }> = [];
 
   scene(drawFn: SceneFunction): SimpleViewBuilder {
@@ -35,7 +35,7 @@ export class SimpleViewBuilder {
     return this;
   }
 
-  grid(options?: any): SimpleViewBuilder {
+  grid(options?: GridOptions): SimpleViewBuilder {
     this.layers.push({
       type: 'grid',
       method: 'grid',
@@ -51,7 +51,7 @@ export class SimpleViewBuilder {
     return this;
   }
 
-  axis(arg1?: string | number | any, arg2?: string, arg3?: number): SimpleViewBuilder {
+  axis(arg1?: string | number | Record<string, unknown>, arg2?: string, arg3?: number): SimpleViewBuilder {
     const { options } = parseAxisArgs(arg1, arg2, arg3);
     this.layers.push({
       type: 'axis',
@@ -69,16 +69,16 @@ export class SimpleViewBuilder {
     for (const layer of this.layers) {
       switch (layer.method) {
         case 'scene':
-          builder.scene(layer.args[0]);
+          builder.scene(layer.args[0] as SceneFunction);
           break;
         case 'plot':
-          builder.plot(layer.args[0], layer.args[1]);
+          builder.plot(layer.args[0] as SelectorFunction, layer.args[1] as string | PlotOptions | undefined);
           break;
         case 'grid':
-          builder.grid(layer.args[0]);
+          builder.grid(layer.args[0] as Record<string, unknown>);
           break;
         case 'axis':
-          builder.axis(layer.args[0]);
+          builder.axis(layer.args[0] as string | number | Record<string, unknown> | undefined);
           break;
       }
     }
@@ -99,18 +99,18 @@ export function plot(selector: SelectorFunction, arg2?: string | PlotOptions, ar
   return new SimpleViewBuilder().plot(selector, arg2, arg3);
 }
 
-export function grid(options?: any): SimpleViewBuilder {
+export function grid(options?: Record<string, unknown>): SimpleViewBuilder {
   return new SimpleViewBuilder().grid(options);
 }
 
 export function axis(xLabel?: string, yLabel?: string, aspectRatio?: number): SimpleViewBuilder;
 export function axis(aspectRatio?: number): SimpleViewBuilder;
-export function axis(options?: any): SimpleViewBuilder;
-export function axis(arg1?: string | number | any, arg2?: string, arg3?: number): SimpleViewBuilder {
+export function axis(options?: Record<string, unknown>): SimpleViewBuilder;
+export function axis(arg1?: string | number | Record<string, unknown>, arg2?: string, arg3?: number): SimpleViewBuilder {
   return new SimpleViewBuilder().axis(arg1, arg2, arg3);
 }
 
 // For explicit canvas settings
-export function canvas(options?: any): SimpleViewBuilder {
+export function canvas(options?: Record<string, unknown>): SimpleViewBuilder {
   return new SimpleViewBuilder();
 }

@@ -2,15 +2,8 @@
  * NullclineRenderer - Renders nullclines (where derivatives are zero)
  */
 
-export interface NullclineOptions {
-  color?: string;
-  linestyle?: 'solid' | 'dashed' | 'dotted';
-  linewidth?: number;
-  label?: string;
-}
-
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer } from '../../../lib';
+import { Layer, NullclineOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class NullclineRenderer implements LayerRenderer {
   render(layer: Layer, context: RenderContext): void {
@@ -21,7 +14,8 @@ export class NullclineRenderer implements LayerRenderer {
 
     // Parse the variable name and create nullcline function
     const variable = selector;
-    const { color = 'red', linestyle = 'dashed', linewidth = 1, label } = options;
+    const nullclineOptions = options as NullclineOptions;
+    const { color = 'red', linestyle = 'dashed', linewidth = 1, label } = nullclineOptions;
 
     // Create nullcline by sampling points where derivative is approximately zero
     const xRange = xScale.domain();

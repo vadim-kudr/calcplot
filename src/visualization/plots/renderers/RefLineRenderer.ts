@@ -2,23 +2,18 @@
  * RefLineRenderer - Renders horizontal and vertical reference lines
  */
 
-export interface RefLineOptions {
-  color?: string;
-  linestyle?: 'solid' | 'dashed' | 'dotted';
-  linewidth?: number;
-  label?: string;
-  labelPosition?: 'left' | 'right' | 'top' | 'bottom' | 'auto';
-  labelOffset?: number;
-}
-
 import { LayerRenderer, RenderContext } from '../interfaces';
 import { Layer } from '../../../lib';
+import { RefLineOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class RefLineRenderer implements LayerRenderer {
   render(layer: Layer, context: RenderContext): void {
     const { g, xScale, yScale } = context;
     const { options } = layer;
 
+    if (!options) return;
+
+    const refLineOptions = options as RefLineOptions;
     const { 
       orientation, 
       value, 
@@ -28,7 +23,9 @@ export class RefLineRenderer implements LayerRenderer {
       label,
       labelPosition = 'auto',
       labelOffset = 8
-    } = options;
+    } = refLineOptions;
+
+    if (!orientation || value === undefined) return;
 
     // Calculate actual plot area bounds (inside the axis frame)
     const axisWidth = 2; // Match axisWidth from AxisRenderer

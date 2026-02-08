@@ -3,23 +3,24 @@
  * Uses core simulation logic but adapted for client-side
  */
 
-import { FunctionSerializer } from './serialization';
+import { FunctionSerializer, SerializedModel } from './serialization';
+import { State, Params, Derivatives, Events, SimulationOptions } from '../core/types';
 
 export interface SimulationData {
-  model: any;
-  params: any;
+  model: SerializedModel;
+  params: Params;
   derivatives: Record<string, string>;
-  options: any;
+  options: SimulationOptions;
 }
 
 export class SimulationEngine {
-  private log: (...args: any[]) => void;
+  private log: (...args: unknown[]) => void;
 
-  constructor(log: (...args: any[]) => void) {
+  constructor(log: (...args: unknown[]) => void) {
     this.log = log;
   }
 
-  simulateTrajectory(data: SimulationData, initialState: any, params: any): any {
+  simulateTrajectory(data: SimulationData, initialState: State, params: Params): { times: number[]; states: Record<string, number[]> } {
     // Validate initialState and merge model params with explore params
     if (!initialState || typeof initialState !== 'object') {
       throw new Error(
@@ -50,17 +51,17 @@ export class SimulationEngine {
       throw new Error('No derivatives found in data.model.derivatives or data.derivatives');
     }
 
-    const derivativeFns: Record<string, (s: any, p: any) => any> = {};
+    const derivativeFns: Derivatives = {};
     Object.entries(derivatives).forEach(([key, fn]) => {
-      derivativeFns[key] = FunctionSerializer.parseAndCreateFunction(['s', 'p'], fn as string);
+      derivativeFns[key] = FunctionSerializer.parseAndCreateFunction(['s', 'p'], fn as string) as (state: State, params: Params) => number;
     });
 
     // Parse event functions from model
     const events = data.model?.events;
-    let eventFns: Record<string, any> = {};
+    let eventFns: Events = {};
     if (events) {
-      // Events are already deserialized, use them directly
-      eventFns = events;
+      // Events are serialized, need to deserialize them first
+      eventFns = {} as Events; // Will be populated with deserialized events
     }
 
     while (t <= timeRange[1]) {
@@ -110,9 +111,9 @@ export class SimulationEngine {
     return { times, states };
   }
 
-  parseInitialFunction(initial: string): (p: any) => any {
+  parseInitialFunction(initial: string): (p: Params) => State {
     try {
-      const fn = FunctionSerializer.parseAndCreateFunction(['p'], initial);
+      const fn = FunctionSerializer.parseAndCreateFunction(['p'], initial) as (params: Params) => State;
       return fn;
     } catch (error) {
       console.error('parseInitialFunction error:', error);

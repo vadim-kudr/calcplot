@@ -3,7 +3,7 @@
  */
 
 export interface HtmlAttrs {
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined | null;
 }
 
 // DOM element creation functions
@@ -16,11 +16,13 @@ export function createElement(
 
   Object.entries(attrs).forEach(([key, val]) => {
     if (key === 'className') {
-      element.className = val;
+      if (val !== undefined && val !== null) {
+        element.className = String(val);
+      }
     } else if (key.startsWith('data-')) {
       element.setAttribute(key, String(val));
     } else if (key in element) {
-      (element as any)[key] = val;
+      (element as unknown as Record<string, unknown>)[key] = val;
     } else {
       element.setAttribute(key, String(val));
     }
@@ -50,7 +52,7 @@ export const button = (attrs: HtmlAttrs = {}, ...children: (HTMLElement | string
 export const canvas = (attrs: HtmlAttrs = {}) => createElement('canvas', attrs);
 
 // HTML string generation function (for compatibility)
-export function h(tag: string, attrs: HtmlAttrs = {}, ...children: any[]): string {
+export function h(tag: string, attrs: HtmlAttrs = {}, ...children: (string | number | boolean | null | undefined)[]): string {
   const attrStr = Object.entries(attrs)
     .filter(([_, val]) => val !== undefined && val !== null && val !== false)
     .map(([key, val]) => {
@@ -70,12 +72,12 @@ export function h(tag: string, attrs: HtmlAttrs = {}, ...children: any[]): strin
 }
 
 // Common shortcuts for HTML strings
-export const divStr = (attrs: HtmlAttrs = {}, ...children: any[]) => h('div', attrs, ...children);
-export const spanStr = (attrs: HtmlAttrs = {}, ...children: any[]) => h('span', attrs, ...children);
+export const divStr = (attrs: HtmlAttrs = {}, ...children: (string | number | boolean | null | undefined)[]) => h('div', attrs, ...children);
+export const spanStr = (attrs: HtmlAttrs = {}, ...children: (string | number | boolean | null | undefined)[]) => h('span', attrs, ...children);
 export const inputStr = (attrs: HtmlAttrs = {}) => h('input', attrs);
-export const labelStr = (attrs: HtmlAttrs = {}, ...children: any[]) =>
+export const labelStr = (attrs: HtmlAttrs = {}, ...children: (string | number | boolean | null | undefined)[]) =>
   h('label', attrs, ...children);
-export const buttonStr = (attrs: HtmlAttrs = {}, ...children: any[]) =>
+export const buttonStr = (attrs: HtmlAttrs = {}, ...children: (string | number | boolean | null | undefined)[]) =>
   h('button', attrs, ...children);
 export const canvasStr = (attrs: HtmlAttrs = {}) => h('canvas', attrs);
 export const style = (content: string) => h('style', {}, content);

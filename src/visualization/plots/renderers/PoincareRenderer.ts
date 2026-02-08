@@ -2,16 +2,8 @@
  * PoincareRenderer - Renders Poincaré sections
  */
 
-export interface PoincareOptions {
-  section: (state: any) => boolean;    // Section condition
-  direction?: 'positive' | 'negative' | 'both';  // Crossing direction
-  marker?: string;                    // Marker style
-  color?: string;                      // Color
-  size?: number;                       // Marker size
-}
-
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer } from '../../../lib';
+import { Layer, PoincareOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class PoincareRenderer implements LayerRenderer {
   render(layer: Layer, context: RenderContext): void {
@@ -20,15 +12,16 @@ export class PoincareRenderer implements LayerRenderer {
 
     if (!selector) return;
 
-    // Parse the section function
+    // Parse section function
     const sectionFn = new Function('state', `return ${selector}`) as (state: any) => boolean;
     
+    const poincareOptions = options as PoincareOptions;
     const { 
       direction = 'positive', 
       marker = 'circle', 
       color = 'red', 
       size = 4 
-    } = options;
+    } = poincareOptions;
 
     // Get the timeline from context
     const timeline = (context as any).timeline;

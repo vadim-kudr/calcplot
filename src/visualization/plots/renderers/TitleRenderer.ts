@@ -2,12 +2,8 @@
  * TitleRenderer - Renders plot titles
  */
 
-export interface TitleOptions {
-  text: string;
-}
-
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer } from '../../../lib';
+import { Layer, TitleOptions } from '../../../lib/builders/BuilderInterfaces';
 
 export class TitleRenderer implements LayerRenderer {
   private static renderedTitles = new Set<string>();
@@ -16,7 +12,8 @@ export class TitleRenderer implements LayerRenderer {
     const { svg, xScale, yScale } = context;
     const { options } = layer;
 
-    const { text } = options;
+    const titleOptions = options as TitleOptions;
+    const { text } = titleOptions;
     if (!text) return;
 
     // Prevent duplicate titles
