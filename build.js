@@ -116,6 +116,17 @@ function startServer(port = '8080') {
   return server;
 }
 
+function copyCSSFile() {
+  const cssSource = './src/visualization/plots/styles/calcplot.css';
+  const cssDest = './dist/calcplot-client.css';
+  if (fs.existsSync(cssSource)) {
+    fs.copyFileSync(cssSource, cssDest);
+    if (isVerbose) console.log(`  → ${cssSource} → ${cssDest}`);
+  } else {
+    console.warn('⚠️  CSS source file not found:', cssSource);
+  }
+}
+
 // Build library function
 async function buildLibrary() {
   const start = Date.now();
@@ -123,6 +134,8 @@ async function buildLibrary() {
     if (isVerbose) console.log(`  → ${config.entryPoints[0]} → ${config.outfile}`);
     return esbuild.context(config);
   }));
+
+  copyCSSFile();
 
   if (isWatch) {
     console.log('👀 Watching library... (Ctrl+C to stop)');
@@ -138,6 +151,8 @@ async function buildLibrary() {
 
 // Build examples bundle function
 async function buildExamplesBundle() {
+  copyCSSFile();
+  
   // Build examples
   const exampleBuilder = new ExampleBuilder();
   await exampleBuilder.build();
