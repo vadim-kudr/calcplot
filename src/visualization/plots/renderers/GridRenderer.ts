@@ -4,13 +4,10 @@
  */
 
 import * as d3 from 'd3';
-import { LayerRenderer } from '../interfaces';
+import { BaseLayer, LayerRenderer } from '../interfaces';
 import { RenderContext } from '../interfaces/RenderContext';
 import { TickCalculator } from '../utils/TickCalculator';
 
-/**
- * Grid options interface
- */
 export interface GridOptions {
   showGrid?: boolean;
   includeZeroInGrid?: boolean;
@@ -23,8 +20,10 @@ export interface GridOptions {
   minorGridOpacity?: number;
 }
 
+export type GridLayer = BaseLayer<'grid', GridOptions>;
+
 export class GridRenderer implements LayerRenderer {
-  render(layer: any, context: RenderContext): void {
+  render(layer: GridLayer, context: RenderContext): void {
     const options: GridOptions = layer.options || {};
     const showGrid = options.showGrid !== false;
     const gridColor = options.gridColor || '#e0e0e0';

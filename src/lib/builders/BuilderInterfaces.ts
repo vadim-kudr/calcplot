@@ -4,123 +4,16 @@
 
 import { State, Params } from '../../core/types';
 
-export interface GridOptions {
-  showGrid?: boolean;
-  gridColor?: string;
-  gridOpacity?: number;
-  gridWidth?: number;
-  color?: string;
-  alpha?: number;
-  spacing?: number;
-}
+export type SelectorResult = number | [number, number];
 
-export interface PlotOptions {
-  color?: string;
-  lineWidth?: number;
-  dash?: number[];
-  label?: string;
-  alpha?: number;
-}
-
-export interface AxisOptions {
-  showTicks?: boolean;
-  showLabels?: boolean;
-  showSpine?: boolean;
-  tickSize?: number;
-  tickPadding?: number;
-  labelPadding?: number;
-  fontSize?: number;
-  fontColor?: string;
-  tickColor?: string;
-  labelColor?: string;
-  axisColor?: string;
-  axisWidth?: number;
-  xLabel?: string;
-  yLabel?: string;
-  aspectRatio?: number;
-}
-
-export interface FillOptions {
-  color?: string;
-  alpha?: number;
-}
-
-export interface RefLineOptions {
-  orientation?: 'horizontal' | 'vertical';
-  value?: number;
-  color?: string;
-  linestyle?: 'solid' | 'dashed' | 'dotted';
-  linewidth?: number;
-  label?: string;
-  labelPosition?: 'left' | 'right' | 'top' | 'bottom' | 'auto';
-  labelOffset?: number;
-}
-
-export interface LegendOptions {
-  loc?: 'upper right' | 'upper left' | 'lower right' | 'lower left' | 'center';
-  frame?: boolean;
-  alpha?: number;
-}
-
-export interface VectorFieldOptions {
-  gridSize?: number;
-  color?: string;
-  alpha?: number;
-  normalize?: boolean;
-  scale?: number;
-}
-
-export interface PoincareOptions {
-  section: (state: State) => boolean;    // Section condition
-  direction?: 'positive' | 'negative' | 'both';  // Crossing direction
-  marker?: string;                    // Marker style ('circle' | 'cross')
-  color?: string;                      // Color
-  size?: number;                       // Marker size
-}
-
-export interface NullclineOptions {
-  color?: string;
-  linestyle?: 'solid' | 'dashed' | 'dotted';
-  linewidth?: number;
-  label?: string;
-}
-
-export interface TitleOptions {
-  text?: string;
-  color?: string;
-  size?: number;
-  font?: string;
-  position?: 'top' | 'bottom' | 'center';
-}
-
-export interface VectorOptions {
-  color?: string;
-  label?: string;
-  scale?: number;
-  width?: number;
-}
-
-export type LayerOptions = 
-  | GridOptions 
-  | PlotOptions 
-  | AxisOptions 
-  | FillOptions 
-  | RefLineOptions 
-  | LegendOptions 
-  | VectorFieldOptions 
-  | NullclineOptions 
-  | PoincareOptions 
-  | VectorOptions 
-  | TitleOptions 
-  | Record<string, unknown>;
-
+// Function interfaces
 export interface SceneFunction {
   (ctx: DrawContext, state: State): void;
 }
 
 export interface SelectorFunction {
-  (state: State): number | [number, number];
-  (state: State, params: Params): number | [number, number];
+  (state: State): SelectorResult;
+  (state: State, params: Params): SelectorResult;
 }
 
 export interface VectorFunction {
@@ -149,16 +42,13 @@ export interface DrawContext {
     text: string,
     options?: { color?: string; size?: number; font?: string }
   ) => void;
-  plot: (xValues: number[], yValues: number[], options?: PlotOptions) => void;
+  plot: (xValues: number[], yValues: number[], options?: any) => void;
 }
 
-export interface Layer {
-  type: 'grid' | 'scene' | 'plot' | 'vector' | 'bounds' | 'axis' | 'fill' | 'refline' | 'title' | 'legend' | 'vectorField' | 'nullcline' | 'poincare';
-  options?: LayerOptions;
-  draw?: string; // serialized function
-  selector?: string; // serialized function
-  at?: string; // serialized function
-  dir?: string; // serialized function
-  bounds?: { x?: [number, number] | 'auto'; y?: [number, number] | 'auto' };
-  parametric?: boolean; // true for [x, y] plots
+// Layer interfaces for ViewBuilder
+export interface SceneLayer {
+  type: 'scene';
+  draw?: string; // serialized function body - params extracted by caching system
+  index?: number;
+  options?: any;
 }

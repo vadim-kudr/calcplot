@@ -3,7 +3,13 @@
  * Based on LAYOUT.md recommendations
  */
 
-import { PlotOptions, SceneFunction, SelectorFunction, parsePlotArgs, parseAxisArgs, GridOptions, AxisOptions } from './BuilderUtils';
+import { parsePlotArgs, parseAxisArgs } from './BuilderUtils';
+import type { 
+  PlotOptions,
+  AxisOptions,
+  GridOptions
+} from '../../visualization/plots/interfaces';
+import { SceneFunction, SelectorFunction } from './BuilderInterfaces';
 import { ViewBuilder } from './ViewBuilder';
 import type { Timeline } from '../../core/types';
 

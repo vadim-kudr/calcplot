@@ -5,32 +5,25 @@
 import * as d3 from 'd3';
 import { LayerRenderer } from '../interfaces';
 import { RenderContext } from '../interfaces/RenderContext';
-import { FunctionSerializer } from '../../../simulation/serialization';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
+import { State, Params } from '../../../core/types';
+import { SceneLayer } from '../../../lib/builders/BuilderInterfaces';
 
 export interface SceneOptions {
-  // Scene-specific options can be added here
-  drawing?: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
   backgroundColor?: string;
 }
 
-export class SceneRenderer implements LayerRenderer {
-  render(layer: any, context: RenderContext, timeline?: any): void {
+export type SceneLayerWithCache = CachedLayer<'scene', SceneOptions> & { draw?: string };
+
+export class SceneRenderer extends CachedLayerRenderer<SceneLayerWithCache> implements LayerRenderer {
+  render(layer: SceneLayerWithCache, context: RenderContext, timeline?: any): void {
     if (!timeline) return;
     
-    const { draw } = layer;
-
-    if (!draw) {
-      return;
-    }
-
-    let drawFn: (ctx: any, state: any) => void;
-    try {
-      drawFn = FunctionSerializer.parseAndCreateFunction(['ctx', 'state'], draw) as (
-        ctx: any,
-        state: any
-      ) => void;
-    } catch (e) {
-      console.warn('Failed to compile scene function:', e);
+    // Get cached draw function
+    const drawFn = this.getDrawFunction(layer, layer.draw);
+    
+    if (!drawFn) {
+      console.warn('No draw function found in layer');
       return;
     }
 

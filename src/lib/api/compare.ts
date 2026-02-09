@@ -5,7 +5,7 @@
 
 import type { Timeline } from '../../core/types';
 import type { CompareDescriptor } from '../types';
-import type { Layer } from '../builders/BuilderInterfaces';
+import type { Layer } from '../../visualization/plots/interfaces';
 import { renderToHTML } from '../utils/renderToHTML';
 import { displayHTML } from '../utils/displayHTML';
 import { loadClientBundle } from '../utils/bundleLoader';

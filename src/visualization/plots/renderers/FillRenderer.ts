@@ -2,18 +2,27 @@
  * FillRenderer - Renders filled regions based on predicates
  */
 
-import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer, FillOptions } from '../../../lib/builders/BuilderInterfaces';
+import { LayerRenderer } from '../interfaces/LayerRenderer';
+import { RenderContext } from '../interfaces/RenderContext';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
+import { State, Params } from '../../../core/types';
 
-export class FillRenderer implements LayerRenderer {
-  render(layer: Layer, context: RenderContext): void {
+export interface FillOptions {
+  color?: string;
+  alpha?: number;
+}
+
+export type FillLayer = CachedLayer<'fill', FillOptions>;
+
+export class FillRenderer extends CachedLayerRenderer<FillLayer> implements LayerRenderer {
+  render(layer: FillLayer, context: RenderContext): void {
     const { svg, xScale, yScale } = context;
     const { selector, options } = layer;
 
-    if (!selector) return;
-
-    // Parse the predicate function
-    const predicateFn = new Function('state', `return ${selector}`) as (state: any) => boolean;
+    // Get cached predicate function
+    const predicateFn = this.getPredicateFunction(layer, layer.selector);
+    
+    if (!predicateFn) return;
     
     const fillOptions = options as FillOptions;
     const { color = 'blue', alpha = 0.2 } = fillOptions;

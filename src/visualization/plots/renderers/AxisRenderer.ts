@@ -6,10 +6,30 @@
 import { LayerRenderer } from '../interfaces';
 import { RenderContext } from '../interfaces/RenderContext';
 import { TickCalculator } from '../utils/TickCalculator';
-import { AxisOptions } from '../../../lib/builders/BuilderInterfaces';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
 
-export class AxisRenderer implements LayerRenderer {
-  render(layer: any, context: RenderContext): void {
+export interface AxisOptions {
+  showTicks?: boolean;
+  showLabels?: boolean;
+  showSpine?: boolean;
+  tickSize?: number;
+  tickPadding?: number;
+  labelPadding?: number;
+  fontSize?: number;
+  fontColor?: string;
+  tickColor?: string;
+  labelColor?: string;
+  axisColor?: string;
+  axisWidth?: number;
+  xLabel?: string;
+  yLabel?: string;
+  aspectRatio?: number;
+}
+
+export type AxisLayer = CachedLayer<'axis', AxisOptions>;
+
+export class AxisRenderer extends CachedLayerRenderer<AxisLayer> implements LayerRenderer {
+  render(layer: AxisLayer, context: RenderContext): void {
     const options: AxisOptions = layer.options || {};
     const showTicks = options.showTicks !== false;
     const showLabels = options.showLabels !== false;

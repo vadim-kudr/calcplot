@@ -3,12 +3,22 @@
  */
 
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer, TitleOptions } from '../../../lib/builders/BuilderInterfaces';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
 
-export class TitleRenderer implements LayerRenderer {
+export interface TitleOptions {
+  text?: string;
+  color?: string;
+  size?: number;
+  font?: string;
+  position?: 'top' | 'bottom' | 'center';
+}
+
+export type TitleLayer = CachedLayer<'title', TitleOptions>;
+
+export class TitleRenderer extends CachedLayerRenderer<TitleLayer> implements LayerRenderer {
   private static renderedTitles = new Set<string>();
 
-  render(layer: Layer, context: RenderContext): void {
+  render(layer: TitleLayer, context: RenderContext): void {
     const { svg, xScale, yScale } = context;
     const { options } = layer;
 

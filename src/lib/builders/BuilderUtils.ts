@@ -4,27 +4,9 @@
 
 import { SelectorFunction } from './BuilderInterfaces';
 
-// Re-export interfaces from BuilderInterfaces
-export type { 
-  PlotOptions, 
-  AxisOptions, 
-  GridOptions,
-  FillOptions,
-  RefLineOptions,
-  LegendOptions,
-  VectorFieldOptions,
-  PoincareOptions,
-  NullclineOptions,
-  VectorOptions,
-  SceneFunction,
-  VectorFunction,
-  SelectorFunction,
-  DrawContext,
-  Layer
-} from './BuilderInterfaces';
-
-// Import for internal use
-import { PlotOptions, AxisOptions } from './BuilderInterfaces';
+// Import specific Options where needed
+import type { PlotOptions } from '../../visualization/plots/renderers/PlotRenderer';
+import type { AxisOptions } from '../../visualization/plots/renderers/AxisRenderer';
 
 /**
  * Parse plot arguments with flexible signatures

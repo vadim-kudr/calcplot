@@ -48,31 +48,31 @@ export class TickCalculator {
   }
 
   /**
-   * Calculate tick values for given bounds (from old AxisRenderer)
+   * Calculate tick values for given bounds with overlap prevention
    */
   static calculateTicks(xBounds: [number, number], yBounds: [number, number]): {
     xTicks: TickSet;
     yTicks: TickSet;
   } {
-    const xRange = xBounds[1] - xBounds[0];
-    const yRange = yBounds[1] - yBounds[0];
+    // Handle invalid bounds
+    const xRange = Math.abs(xBounds[1] - xBounds[0]);
+    const yRange = Math.abs(yBounds[1] - yBounds[0]);
     
-    const xStep = this.calculateNiceStep(xRange, 6);
-    const yStep = this.calculateNiceStep(yRange, 5);
+    // Calculate initial steps
+    let xStep = this.calculateNiceStep(xRange, 6);
+    let yStep = this.calculateNiceStep(yRange, 5);
     
-    const xStart = Math.ceil(xBounds[0] / xStep) * xStep;
-    const yStart = Math.ceil(yBounds[0] / yStep) * yStep;
-    
-    const xValues: number[] = [];
-    const yValues: number[] = [];
-    
-    for (let x = xStart; x <= xBounds[1]; x += xStep) {
-      xValues.push(x);
+    // For very narrow ranges, use larger steps to prevent overlap
+    if (xRange < 0.01) {
+      xStep = Math.max(xStep, xRange * 0.5); // At least 50% of range
+    }
+    if (yRange < 0.01) {
+      yStep = Math.max(yStep, yRange * 0.5); // At least 50% of range
     }
     
-    for (let y = yStart; y <= yBounds[1]; y += yStep) {
-      yValues.push(y);
-    }
+    // Generate tick values
+    const xValues = this.generateTickValues(xBounds, xStep);
+    const yValues = this.generateTickValues(yBounds, yStep);
     
     return {
       xTicks: {
@@ -88,4 +88,36 @@ export class TickCalculator {
     };
   }
 
+  /**
+   * Generate tick values with overlap prevention
+   */
+  private static generateTickValues(bounds: [number, number], step: number): number[] {
+    const [min, max] = bounds;
+    const range = max - min;
+    
+    // Handle edge cases
+    if (range <= 0 || step <= 0) {
+      return [min];
+    }
+    
+    // For very narrow ranges, limit to just 2-3 ticks
+    let maxTicks = 10;
+    if (range < 0.1) maxTicks = 3;
+    if (range < 0.01) maxTicks = 2;
+    
+    const start = Math.ceil(min / step) * step;
+    const values: number[] = [];
+    
+    // Generate ticks with limit
+    for (let value = start; value <= max && values.length < maxTicks; value += step) {
+      values.push(value);
+    }
+    
+    // Ensure we have at least start and end ticks for very narrow ranges
+    if (values.length === 1 && range > 0) {
+      values.push(max);
+    }
+    
+    return values;
+  }
 }

@@ -1,6 +1,6 @@
 import type { Control } from "./controls";
 import type { Params, State, Events } from "../core/types";
-import type { Layer } from "./builders/BuilderInterfaces";
+import type { Layer } from "../visualization/plots/interfaces";
 
 export interface SerializedParams {
   [key: string]: Control;

@@ -3,17 +3,31 @@
  */
 
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer, VectorFieldOptions } from '../../../lib/builders/BuilderInterfaces';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
+import { State, Params } from '../../../core/types';
 
-export class VectorFieldRenderer implements LayerRenderer {
-  render(layer: Layer, context: RenderContext): void {
+export interface VectorFieldOptions {
+  gridSize?: number;
+  color?: string;
+  alpha?: number;
+  normalize?: boolean;
+  scale?: number;
+}
+
+export type VectorFieldLayer = CachedLayer<'vectorField', VectorFieldOptions>;
+
+export class VectorFieldRenderer extends CachedLayerRenderer<VectorFieldLayer> implements LayerRenderer {
+  render(layer: VectorFieldLayer, context: RenderContext): void {
     const { svg, xScale, yScale } = context;
     const { selector, options } = layer;
 
-    if (!selector) return;
-
-    // Parse the vector field function
-    const vectorFn = new Function('state', 'params', `return ${selector}`) as (state: any, params: any) => { dx: number; dy: number };
+    // Get cached vector function
+    const vectorFn = layer.selector ? this.createVectorFunction(layer.selector) : undefined;
+    
+    if (!vectorFn) {
+      console.warn('No vector function found in layer');
+      return;
+    }
 
     const vectorFieldOptions = options as VectorFieldOptions;
     const { gridSize = 20, color = 'gray', alpha = 0.6, normalize = true, scale = 1 } = vectorFieldOptions;

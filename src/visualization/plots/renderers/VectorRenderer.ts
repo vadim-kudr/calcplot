@@ -3,47 +3,38 @@
  */
 
 import * as d3 from 'd3';
-import { LayerRenderer, createSelectorFunction } from '../interfaces/LayerRenderer';
-import { RenderContext } from '../interfaces';
-import { FunctionSerializer } from '../../../simulation/serialization';
+import { LayerRenderer, RenderContext } from '../interfaces';
 import { Timeline, State, Params } from '../../../core/types';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
 
 export interface VectorOptions {
-  scale?: number;
   color?: string;
+  label?: string;
+  scale?: number;
+  width?: number;
 }
 
-import { Layer } from '../../../lib/builders/BuilderInterfaces';
+export type VectorLayer = CachedLayer<'vector', VectorOptions> & {
+  at?: string; // serialized function
+  dir?: string; // serialized function
+};
 
-export class VectorRenderer implements LayerRenderer {
-  render(layer: { at: string; dir: string; options?: VectorOptions }, context: RenderContext, timeline?: Timeline): void {
+export class VectorRenderer extends CachedLayerRenderer<VectorLayer> implements LayerRenderer {
+  render(layer: VectorLayer, context: RenderContext, timeline?: Timeline): void {
     if (!timeline) return;
     
-    const { at, dir, options = {} } = layer;
-    const scale = options?.scale ?? 1;
-    const color = options?.color ?? 'gray';
+    // Get cached vector functions using CachedLayerRenderer
+    const atFn = this.getVectorFunction(layer, 'at');
+    const dirFn = this.getVectorFunction(layer, 'dir');
     
-    if (!at || !dir) {
+    if (!atFn || !dirFn) {
       return;
     }
     
-    let atFn: (s: State, p?: Params) => [number, number];
-    let dirFn: (s: State, p?: Params) => [number, number];
+    const { at, dir, options = {} } = layer;
+    const scale = (options as VectorOptions)?.scale ?? 1;
+    const color = (options as VectorOptions)?.color ?? 'gray';
     
-    try {
-      // Always try with params first
-      atFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], at) as (s: State, p?: Params) => [number, number];
-    } catch {
-      atFn = FunctionSerializer.parseAndCreateFunction(['s'], at) as (s: State) => [number, number];
-    }
-    
-    try {
-      // Always try with params first
-      dirFn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], dir) as (s: State, p?: Params) => [number, number];
-    } catch {
-      dirFn = FunctionSerializer.parseAndCreateFunction(['s'], dir) as (s: State) => [number, number];
-    }
-
     const vectors: Array<{x: number, y: number, vx: number, vy: number}> = [];
 
     timeline.times.forEach((_: any, i: number) => {
@@ -53,8 +44,8 @@ export class VectorRenderer implements LayerRenderer {
       }, {});
 
       try {
-        const position = atFn(state, context.params);
-        const direction = dirFn(state, context.params);
+        const position = atFn(state, context.params || {});
+        const direction = dirFn(state, context.params || {});
         
         if (Array.isArray(position) && position.length === 2 && 
             Array.isArray(direction) && direction.length === 2) {
@@ -71,8 +62,9 @@ export class VectorRenderer implements LayerRenderer {
     });
 
     if (vectors.length > 0) {
-      const scale = options.scale || 1;
-      const color = options.color || '#666';
+      const vectorOptions = layer.options as VectorOptions;
+      const scale = vectorOptions?.scale || 1;
+      const color = vectorOptions?.color || '#666';
       
       // Arrow markers
       const defs = context.svg.append('defs');

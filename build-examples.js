@@ -97,10 +97,6 @@ export class ExampleBuilder {
     // Generate syntax-highlighted code
     const highlightedCode = Prism.highlight(example.code, Prism.languages.javascript, 'javascript');
     
-    console.log(`Example ${example.id}: code length = ${example.code.length}`);
-    console.log(`Example ${example.id}: highlighted code length = ${highlightedCode.length}`);
-    console.log(`Example ${example.id}: first 100 chars of highlighted code = ${highlightedCode.substring(0, 100)}`);
-    
     return {
         id: example.id,
         title: example.title,
@@ -143,17 +139,13 @@ export class ExampleBuilder {
     
     for (const category of categories) {
       const categoryDir = path.resolve('examples', category);
-      console.log(`Checking directory: ${categoryDir}`);
       try {
         const stat = fs.statSync(categoryDir);
         if (stat.isDirectory()) {
           const files = fs.readdirSync(categoryDir)
             .filter(file => file.endsWith('.js'))
             .map(file => path.join(categoryDir, file));
-          console.log(`Found ${files.length} files in ${category}:`, files);
           exampleFiles.push(...files);
-        } else {
-          console.log(`${categoryDir} is not a directory`);
         }
       } catch (error) {
         console.log(`Error accessing ${categoryDir}:`, error.message);

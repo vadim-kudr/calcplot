@@ -19,6 +19,11 @@ export interface SerializedTimeline {
   states: Record<string, number[]>;
 }
 
+export interface SerializedFunction {
+  body: string;           // "return s.vx"
+  params: string[];       // ["s"] или ["state", "params"]
+}
+
 /**
  * Function serialization utilities
  */
@@ -32,47 +37,121 @@ export class FunctionSerializer {
    * - "function(p){ return p.x; }" → "return p.x;"
    */
   static parseFunction(fnStr: string): string {
+  const trimmed = fnStr.trim();
+  
+  // Edge cases: not functions
+  if (!trimmed || !trimmed.includes('=>') && !trimmed.startsWith('function')) {
+    return trimmed;
+  }
+  
+  // Special case: parentheses-wrapped object literal (p) => ({ x: p.x0 })
+  const arrowIndex = trimmed.indexOf('=>');
+  if (arrowIndex !== -1) {
+    const afterArrow = trimmed.substring(arrowIndex + 2).trim();
+    if (afterArrow.startsWith('(') && afterArrow.endsWith(')')) {
+      const innerContent = afterArrow.slice(1, -1).trim();
+      if (innerContent.startsWith('{') && innerContent.endsWith('}')) {
+        // It's an object literal in parentheses
+        return `return (${innerContent})`;
+      }
+    }
+  }
+  
+  // Remove function signature
+  const bodyStart = trimmed.indexOf('{') !== -1 
+    ? trimmed.indexOf('{') + 1 
+    : trimmed.indexOf('=>') + 2;
+    
+  const bodyEnd = trimmed.lastIndexOf('}') !== -1 
+    ? trimmed.lastIndexOf('}') 
+    : trimmed.length;
+    
+  let body = trimmed.slice(bodyStart, bodyEnd).trim();
+  
+  // If it's an expression, add return
+  if (!trimmed.includes('{') && !body.startsWith('return')) {
+    if (body.startsWith('{') && body.endsWith('}')) {
+      // Direct object literal, wrap in parentheses
+      body = `return (${body})`;
+    } else {
+      body = `return ${body}`;
+    }
+  }
+  
+  return body;
+}
+
+  /**
+   * Extract parameter names from function string
+   */
+  static extractParams(fnStr: string): string[] {
     const trimmed = fnStr.trim();
 
-    // If it's an arrow function wrapped in parentheses with block body
-    const arrowMatch = trimmed.match(/^\(([^)]+)\)\s*=>\s*\{([\s\S]*)\}$/);
-    if (arrowMatch) {
-      return arrowMatch[2].trim();
+    // Extract parameter list
+    let paramStr = '';
+    
+    if (trimmed.includes('=>')) {
+      // Arrow function: (s, p) => ..., s => ..., (s) => ...
+      const arrowIndex = trimmed.indexOf('=>');
+      paramStr = trimmed.substring(0, arrowIndex).trim();
+      
+      // Remove 'function' keyword if present
+      if (paramStr.startsWith('function')) {
+        paramStr = paramStr.substring(8).trim();
+      }
+      
+      // Extract parameters between parentheses or before =>
+      if (paramStr.startsWith('(')) {
+        const closingParen = paramStr.indexOf(')');
+        if (closingParen !== -1) {
+          paramStr = paramStr.substring(1, closingParen);
+        }
+      }
+    } else if (trimmed.startsWith('function')) {
+      // Regular function: function(s, p) { ... }
+      const parenStart = trimmed.indexOf('(');
+      const parenEnd = trimmed.indexOf(')');
+      if (parenStart !== -1 && parenEnd !== -1 && parenEnd > parenStart) {
+        paramStr = trimmed.substring(parenStart + 1, parenEnd);
+      }
     }
 
-    // If it's a simple arrow function without parentheses with block body
-    const simpleArrowBlockMatch = trimmed.match(/^(\w+)\s*=>\s*\{([\s\S]*)\}$/);
-    if (simpleArrowBlockMatch) {
-      return simpleArrowBlockMatch[2].trim();
-    }
+    return paramStr
+      .split(',')
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+  }
 
-    // If it's an arrow function wrapped in parentheses with expression body
-    const arrowExprMatch = trimmed.match(/^\(([^)]+)\)\s*=>\s*(.+)$/s);
-    if (arrowExprMatch) {
-      return `return ${arrowExprMatch[2].trim()}`;
-    }
+  /**
+   * Serialize function with parameter extraction
+   */
+  static serializeWithParams(fn: (...args: any[]) => any): SerializedFunction {
+    const fnStr = fn.toString();
+    const body = this.parseFunction(fnStr);
+    const params = this.extractParams(fnStr);
 
-    // If it's a simple arrow function without parentheses and without block
-    const simpleArrowMatch = trimmed.match(/^(\w+)\s*=>\s*(.+)$/s);
-    if (simpleArrowMatch) {
-      return `return ${simpleArrowMatch[2].trim()}`;
-    }
+    return { body, params };
+  }
 
-    // If it's a regular function, extract the body
-    const functionMatch = trimmed.match(/^function\s*\([^)]*\)\s*\{([\s\S]*)\}$/);
-    if (functionMatch) {
-      return functionMatch[1].trim();
-    }
-
-    // Otherwise return as is (might be a simple expression)
-    return trimmed;
+  /**
+   * Serialize function as full string (preserves complete function with parameters)
+   */
+  static serializeFunction(fn: (...args: any[]) => any): string {
+    return fn.toString();
   }
 
   /**
    * Create function from parsed string
    */
   static createFunction(params: string[], body: string): (...args: unknown[]) => unknown {
-    return new Function(...params, body) as (...args: unknown[]) => unknown;
+    // Create function using Function constructor
+    if (params.length === 0) {
+      return new Function(body) as (...args: unknown[]) => unknown;
+    } else if (params.length === 1) {
+      return new Function(params[0], body) as (...args: unknown[]) => unknown;
+    } else {
+      return new Function(params[0], params[1], body) as (...args: unknown[]) => unknown;
+    }
   }
 
   /**
@@ -182,8 +261,8 @@ export function deserializeEvents(serialized: Record<string, string>): Events {
       const eventObj = JSON.parse(eventStr);
       if (eventObj.when && eventObj.then) {
         events[key] = {
-          when: eval(`(${eventObj.when})`),
-          then: eval(`(${eventObj.then})`),
+          when: new Function('return ' + eventObj.when)(),
+          then: new Function('return ' + eventObj.then)(),
           once: eventObj.once || false
         };
       }
@@ -204,13 +283,13 @@ export function deserializeFunctions(serialized: Record<string, string>): Deriva
       // Handle simple function formats only
       if (fnStr.includes('=>')) {
         // Arrow function - use as is
-        functions[key] = eval(`(${fnStr})`);
+        functions[key] = new Function('return ' + fnStr)();
       } else if (fnStr.startsWith('function')) {
         // Regular function declaration - use as is
-        functions[key] = eval(`(${fnStr})`);
+        functions[key] = new Function('return ' + fnStr)();
       } else {
         // Simple expression - wrap in return statement
-        functions[key] = eval(`(state, params) => ${fnStr}`);
+        functions[key] = new Function('state', 'params', 'return ' + fnStr) as (state: State, params: Params) => number;
       }
     } catch (e) {
       console.error('Error deserializing function', key, e);

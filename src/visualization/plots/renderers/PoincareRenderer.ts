@@ -1,19 +1,31 @@
 /**
- * PoincareRenderer - Renders Poincaré sections
+ * PoincaréRenderer - Renders Poincaré sections
  */
 
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer, PoincareOptions } from '../../../lib/builders/BuilderInterfaces';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
+import { State } from '../../../core/types';
 
-export class PoincareRenderer implements LayerRenderer {
-  render(layer: Layer, context: RenderContext): void {
+export interface PoincareOptions {
+  direction?: 'positive' | 'negative' | 'both';  // Crossing direction
+  marker?: string;                    // Marker style ('circle' | 'cross')
+  color?: string;                      // Color
+  size?: number;                       // Marker size
+  position?: string;                   // Position for legend
+  opacity?: number;                     // Opacity for legend
+}
+
+export type PoincareLayer = CachedLayer<'poincare', PoincareOptions>;
+
+export class PoincareRenderer extends CachedLayerRenderer<PoincareLayer> implements LayerRenderer {
+  render(layer: PoincareLayer, context: RenderContext): void {
     const { svg, xScale, yScale } = context;
     const { selector, options } = layer;
 
-    if (!selector) return;
-
-    // Parse section function
-    const sectionFn = new Function('state', `return ${selector}`) as (state: any) => boolean;
+    // Get cached section function
+    const sectionFn = this.getSectionFunction(layer, layer.selector);
+    
+    if (!sectionFn) return;
     
     const poincareOptions = options as PoincareOptions;
     const { 
@@ -70,7 +82,7 @@ export class PoincareRenderer implements LayerRenderer {
     });
   }
 
-  private findPoincarePoints(timeline: any, sectionFn: (state: any) => boolean, direction: string): any[] {
+  private findPoincarePoints(timeline: any, sectionFn: (state: State) => boolean, direction: string): any[] {
     const points: any[] = [];
     const times = timeline.times;
     const states = timeline.states;

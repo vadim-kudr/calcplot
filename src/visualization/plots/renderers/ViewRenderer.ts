@@ -7,7 +7,9 @@ import { LayerRendererFactory } from './LayerRendererFactory';
 import { BoundsCalculator, D3ScaleFactory } from '../utils';
 import type { RenderContext } from '../interfaces';
 import type { Bounds } from '../utils';
-import type { Layer, PlotOptions, AxisOptions } from '../../../lib/builders/BuilderInterfaces';
+import type { Layer } from '../interfaces';
+import type { PlotOptions } from '../renderers/PlotRenderer';
+import type { AxisOptions } from '../renderers/AxisRenderer';
 import type { Timeline, State, Params } from '../../../core/types';
 import type { ViewDescriptor } from '../../../lib/types';
 

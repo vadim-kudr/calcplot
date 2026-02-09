@@ -3,10 +3,20 @@
  */
 
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer, NullclineOptions } from '../../../lib/builders/BuilderInterfaces';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
 
-export class NullclineRenderer implements LayerRenderer {
-  render(layer: Layer, context: RenderContext): void {
+export interface NullclineOptions {
+  color?: string;
+  linestyle?: 'solid' | 'dashed' | 'dotted';
+  linewidth?: number;
+  label?: string;
+  position?: string;
+}
+
+export type NullclineLayer = CachedLayer<'nullcline', NullclineOptions>;
+
+export class NullclineRenderer extends CachedLayerRenderer<NullclineLayer> implements LayerRenderer {
+  render(layer: NullclineLayer, context: RenderContext): void {
     const { svg, xScale, yScale } = context;
     const { selector, options } = layer;
 

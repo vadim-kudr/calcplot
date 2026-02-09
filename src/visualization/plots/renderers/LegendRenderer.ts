@@ -3,9 +3,8 @@
  */
 
 import * as d3 from 'd3';
-import { LayerRenderer } from '../interfaces';
 import { RenderContext } from '../interfaces/RenderContext';
-import { D3ScaleFactory } from '../utils/D3ScaleFactory';
+import { LayerRenderer, BaseLayer } from '../interfaces';
 
 export interface LegendItem {
   label: string;
@@ -27,15 +26,19 @@ export interface LegendOptions {
   opacity?: number;
 }
 
+export type LegendLayer = BaseLayer<'legend', LegendOptions> & {
+  items?: LegendItem[];
+};
+
 export class LegendRenderer implements LayerRenderer {
-  render(layer: any, context: RenderContext): void {
+  render(layer: LegendLayer, context: RenderContext): void {
     const options: LegendOptions = layer.options || {};
     const items: LegendItem[] = layer.items || [];
-    
+
     if (items.length === 0) {
       return;
     }
-    
+
     const position = options.position || 'top-right';
     const backgroundColor = options.backgroundColor || 'rgba(255, 255, 255, 0.75)';
     const borderColor = options.borderColor || '#ccc';
@@ -46,44 +49,44 @@ export class LegendRenderer implements LayerRenderer {
     const fontSize = options.fontSize || 12;
     const fontColor = options.fontColor || '#333';
     const opacity = options.opacity || 1;
-    
+
     // Calculate legend dimensions based on actual text content
-    const tempText = context.g.append('text')
+    const tempText = context.g
+      .append('text')
       .style('font-size', `${fontSize}px`)
       .style('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif')
       .style('visibility', 'hidden');
-    
+
     let maxTextWidth = 0;
-    items.forEach(item => {
+    items.forEach((item) => {
       tempText.text(item.label);
       const textWidth = (tempText.node() as any)?.getBBox()?.width || 0;
       maxTextWidth = Math.max(maxTextWidth, textWidth);
     });
-    
+
     tempText.remove();
-    
+
     const legendWidth = itemWidth + padding * 2 + maxTextWidth + 10; // 10px extra space
     const legendHeight = items.length * itemHeight + padding * 2;
-    
+
     // Calculate position
     const positionCoords = this.calculatePosition(position, legendWidth, legendHeight, context);
-    
+
     // Create legend group
-    const legendGroup = context.g.append('g')
-      .attr('class', 'legend')
-      .attr('opacity', opacity);
-    
+    const legendGroup = context.g.append('g').attr('class', 'legend').attr('opacity', opacity);
+
     // Draw background
     if (backgroundColor) {
       // Legend dimensions should always be positive
       // If calculations result in negative values, use minimum size
       const minLegendWidth = 100; // Minimum legend width
-      const minLegendHeight = 30;  // Minimum legend height
-      
+      const minLegendHeight = 30; // Minimum legend height
+
       const finalLegendWidth = Math.max(minLegendWidth, legendWidth);
       const finalLegendHeight = Math.max(minLegendHeight, legendHeight);
-      
-      legendGroup.append('rect')
+
+      legendGroup
+        .append('rect')
         .attr('class', 'legend-background')
         .attr('x', positionCoords.x)
         .attr('y', positionCoords.y)
@@ -94,20 +97,21 @@ export class LegendRenderer implements LayerRenderer {
         .attr('stroke-width', borderWidth)
         .attr('rx', 4); // rounded corners
     }
-    
+
     // Legend items
-    const itemGroup = legendGroup.append('g')
-      .attr('class', 'legend-items');
-    
+    const itemGroup = legendGroup.append('g').attr('class', 'legend-items');
+
     items.forEach((item, index) => {
       const itemY = positionCoords.y + padding + index * itemHeight + itemHeight / 2;
-      
+
       // Sample line
-      const lineGroup = itemGroup.append('g')
+      const lineGroup = itemGroup
+        .append('g')
         .attr('class', 'legend-item')
         .attr('transform', `translate(${positionCoords.x + padding}, ${itemY})`);
-      
-      lineGroup.append('line')
+
+      lineGroup
+        .append('line')
         .attr('x1', 0)
         .attr('x2', itemWidth)
         .attr('y1', 0)
@@ -115,9 +119,10 @@ export class LegendRenderer implements LayerRenderer {
         .attr('stroke', item.color)
         .attr('stroke-width', item.lineWidth || 2)
         .attr('stroke-dasharray', item.dash ? item.dash.join(',') : 'none');
-      
+
       // Text label
-      itemGroup.append('text')
+      itemGroup
+        .append('text')
         .attr('class', 'legend-label')
         .attr('x', positionCoords.x + padding + itemWidth + 5)
         .attr('y', itemY)
@@ -127,25 +132,25 @@ export class LegendRenderer implements LayerRenderer {
         .text(item.label);
     });
   }
-  
+
   private calculatePosition(
-    position: string, 
-    width: number, 
-    height: number, 
+    position: string,
+    width: number,
+    height: number,
     context: RenderContext
-  ): { x: number, y: number } {
+  ): { x: number; y: number } {
     const margin = 10;
     const axisWidth = 2; // Match axisWidth from AxisRenderer
-    
+
     // Use margins from context
     const margins = context.margins;
-    
+
     // Position at plot area boundaries (inside axis frame)
     const plotLeft = margins.left + axisWidth;
     const plotRight = context.width - margins.right - axisWidth;
     const plotTop = margins.top + axisWidth;
     const plotBottom = context.height - margins.bottom - axisWidth;
-    
+
     let result;
     switch (position) {
       case 'top-left':
@@ -163,7 +168,7 @@ export class LegendRenderer implements LayerRenderer {
       default:
         result = { x: plotRight - width - margin, y: plotTop + margin };
     }
-    
+
     return result;
   }
 }

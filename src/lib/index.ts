@@ -34,15 +34,27 @@ export type {
 
 export type {
   DrawContext,
-  GridOptions,
-  Layer,
+  SelectorFunction,
+  SelectorResult,
+  VectorFunction
+} from './builders/BuilderInterfaces';
+
+export type { Layer } from '../visualization/plots/interfaces';
+
+export type {
   PlotOptions,
   AxisOptions,
-  SceneFunction,
-  SelectorFunction,
-  VectorFunction,
+  GridOptions,
   VectorOptions,
-} from './builders/BuilderUtils';
+  FillOptions,
+  RefLineOptions,
+  LegendOptions,
+  TitleOptions,
+  VectorFieldOptions,
+  NullclineOptions,
+  PoincareOptions,
+  SceneOptions
+} from '../visualization/plots/interfaces';
 
 export { parsePlotArgs, parseAxisArgs } from './builders/BuilderUtils';
 

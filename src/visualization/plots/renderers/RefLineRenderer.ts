@@ -3,11 +3,23 @@
  */
 
 import { LayerRenderer, RenderContext } from '../interfaces';
-import { Layer } from '../../../lib';
-import { RefLineOptions } from '../../../lib/builders/BuilderInterfaces';
+import { CachedLayerRenderer, CachedLayer } from './CachedLayerRenderer';
 
-export class RefLineRenderer implements LayerRenderer {
-  render(layer: Layer, context: RenderContext): void {
+export interface RefLineOptions {
+  orientation?: 'horizontal' | 'vertical';
+  value?: number;
+  color?: string;
+  linestyle?: 'solid' | 'dashed' | 'dotted';
+  linewidth?: number;
+  label?: string;
+  labelPosition?: 'left' | 'right' | 'top' | 'bottom' | 'auto';
+  labelOffset?: number;
+}
+
+export type RefLineLayer = CachedLayer<'refline', RefLineOptions>;
+
+export class RefLineRenderer extends CachedLayerRenderer<RefLineLayer> implements LayerRenderer {
+  render(layer: RefLineLayer, context: RenderContext): void {
     const { g, xScale, yScale } = context;
     const { options } = layer;
 

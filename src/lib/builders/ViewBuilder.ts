@@ -3,10 +3,27 @@
  */
 
 import { State, Params, Timeline } from '../../core/types';
-import { PlotOptions, AxisOptions, GridOptions, FillOptions, RefLineOptions, LegendOptions, VectorFieldOptions, PoincareOptions, NullclineOptions, VectorOptions, SceneFunction, VectorFunction, DrawContext, Layer, SelectorFunction, parsePlotArgs, parseAxisArgs } from './BuilderUtils';
+import { parsePlotArgs, parseAxisArgs } from './BuilderUtils';
+import type { 
+  PlotOptions,
+  AxisOptions,
+  GridOptions,
+  FillOptions,
+  RefLineOptions,
+  LegendOptions,
+  TitleOptions,
+  VectorFieldOptions,
+  PoincareOptions,
+  NullclineOptions,
+  VectorOptions,
+  SceneOptions
+} from '../../visualization/plots/interfaces';
+import { SceneFunction, VectorFunction, DrawContext, SelectorFunction, SceneLayer } from './BuilderInterfaces';
+import { FunctionSerializer } from '../../simulation/serialization';
+import { Layer } from '../../visualization/plots/interfaces';
 
 export class ViewBuilder {
-  private layers: Layer[] = [];
+  private layers: Layer[] = []; 
   private timeline?: Timeline;
 
   constructor(timeline?: Timeline) {
@@ -17,10 +34,12 @@ export class ViewBuilder {
    * Add custom scene drawing layer
    */
   scene(drawFn: SceneFunction): ViewBuilder {
-    this.layers.push({
+    const layer: SceneLayer = {
       type: 'scene',
-      draw: this.serializeFunction(drawFn)
-    });
+      draw: FunctionSerializer.serializeFunction(drawFn)
+    };
+    
+    this.layers.push(layer);
     return this;
   }
 
@@ -28,36 +47,23 @@ export class ViewBuilder {
    * Add vector layer
    */
   vector(at: VectorFunction, dir: VectorFunction, options: VectorOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'vector',
-      at: this.serializeFunction(at),
-      dir: this.serializeFunction(dir),
-      options: {
-        color: '#0ff',
-        scale: 1,
-        width: 2,
-        ...options
-      }
-    });
-    return this;
-  }
-
-  /**
-   * Set bounds for coordinate system
-   */
-  bounds(bounds: { x?: [number, number] | 'auto'; y?: [number, number] | 'auto' }): ViewBuilder {
-    this.layers.push({
-      type: 'bounds',
-      bounds: bounds
-    });
+    const layer = {
+      type: 'vector' as const,
+      at: FunctionSerializer.serializeFunction(at),
+      dir: FunctionSerializer.serializeFunction(dir),
+      options
+    };
+    
+    this.layers.push(layer);
     return this;
   }
 
   grid(options: GridOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'grid',
+    const layer = {
+      type: 'grid' as const,
       options: options
-    });
+    };
+    this.layers.push(layer);
     return this;
   }
 
@@ -66,10 +72,11 @@ export class ViewBuilder {
    */
   axis(arg1?: string | number | AxisOptions, arg2?: string, arg3?: number): ViewBuilder {
     const { options } = parseAxisArgs(arg1, arg2, arg3);
-    this.layers.push({
-      type: 'axis',
+    const layer = {
+      type: 'axis' as const,
       options: options
-    });
+    };
+    this.layers.push(layer);
     return this;
   }
 
@@ -78,61 +85,30 @@ export class ViewBuilder {
    */
   plot(selector: SelectorFunction, arg2?: string | PlotOptions, arg3?: string): ViewBuilder {
     const { selector: parsedSelector, options } = parsePlotArgs(selector, arg2, arg3);
-    const calcplotColors = [
-      '#1f77b4', // blue
-      '#ff7f0e', // orange
-      '#2ca02c', // green
-      '#d62728', // red
-      '#9467bd', // purple
-      '#8c564b', // brown
-      '#e377c2', // pink
-      '#7f7f7f', // gray
-      '#bcbd22', // olive
-      '#17becf'  // cyan
-    ];
-
-    const isParametric = this.detectParametricSelector(parsedSelector);
     const plotIndex = this.layers.filter(l => l.type === 'plot').length;
 
-    this.layers.push({
-      type: 'plot',
-      selector: this.serializeFunction(parsedSelector),
-      parametric: isParametric,
-      options: {
-        color: options.color || calcplotColors[plotIndex % calcplotColors.length],
-        lineWidth: 1.5,
-        opacity: 1,
-        dash: [],
-        label: '',
-        ...options
-      }
-    });
+    const layer = {
+      type: 'plot' as const,
+      index: plotIndex,
+      selector: FunctionSerializer.serializeFunction(parsedSelector),
+      options
+    };
+    
+    this.layers.push(layer);
     return this;
-  }
-
-  /**
-   * Add phase portrait layer (alias for parametric plot)
-   */
-  phase(selector: (state: State) => [number, number], options: PlotOptions = {}): ViewBuilder {
-    return this.plot(selector, {
-      color: '#d62728', // red for phase portraits
-      lineWidth: 2,
-      ...options
-    });
   }
 
   /**
    * Fill region where condition is true
    */
   fill(predicate: (state: State) => boolean, options: FillOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'fill',
-      selector: this.serializeFunction(predicate),
-      options: {
-        color: options.color || 'blue',
-        alpha: options.alpha || 0.2
-      }
-    });
+    const layer = {
+      type: 'fill' as const,
+      selector: FunctionSerializer.serializeFunction(predicate),
+      options
+    };
+    
+    this.layers.push(layer);
     return this;
   }
 
@@ -140,19 +116,15 @@ export class ViewBuilder {
    * Add horizontal reference line
    */
   axhline(y: number, options: RefLineOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'refline',
+    const layer = {
+      type: 'refline' as const,
       options: {
-        orientation: 'horizontal',
+        orientation: 'horizontal' as const,
         value: y,
-        color: options.color || 'gray',
-        linestyle: options.linestyle || 'solid',
-        linewidth: options.linewidth || 1,
-        label: options.label || '',
-        labelPosition: options.labelPosition || 'auto',
-        labelOffset: options.labelOffset || 8
+        ...options
       }
-    });
+    };
+    this.layers.push(layer);
     return this;
   }
 
@@ -160,19 +132,15 @@ export class ViewBuilder {
    * Add vertical reference line
    */
   axvline(x: number, options: RefLineOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'refline',
+    const layer = {
+      type: 'refline' as const,
       options: {
-        orientation: 'vertical',
+        orientation: 'vertical' as const,
         value: x,
-        color: options.color || 'gray',
-        linestyle: options.linestyle || 'solid',
-        linewidth: options.linewidth || 1,
-        label: options.label || '',
-        labelPosition: options.labelPosition || 'auto',
-        labelOffset: options.labelOffset || 8
+        ...options
       }
-    });
+    };
+    this.layers.push(layer);
     return this;
   }
 
@@ -180,10 +148,11 @@ export class ViewBuilder {
    * Set plot title
    */
   title(text: string): ViewBuilder {
-    this.layers.push({
-      type: 'title',
+    const layer = {
+      type: 'title' as const,
       options: { text }
-    });
+    };
+    this.layers.push(layer);
     return this;
   }
 
@@ -191,14 +160,11 @@ export class ViewBuilder {
    * Add legend
    */
   legend(options: LegendOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'legend',
-      options: {
-        loc: options.loc || 'upper right',
-        frame: options.frame !== false,
-        alpha: options.alpha || 1
-      }
-    });
+    const layer = {
+      type: 'legend' as const,
+      options
+    };
+    this.layers.push(layer);
     return this;
   }
 
@@ -206,17 +172,13 @@ export class ViewBuilder {
    * Add vector field
    */
   vectorField(vectorFn: (state: State, params: Params) => { dx: number; dy: number }, options: VectorFieldOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'vectorField',
-      selector: this.serializeFunction(vectorFn),
-      options: {
-        gridSize: options.gridSize || 20,
-        color: options.color || 'gray',
-        alpha: options.alpha || 0.6,
-        normalize: options.normalize !== false,
-        scale: options.scale || 1
-      }
-    });
+    const layer = {
+      type: 'vectorField' as const,
+      selector: FunctionSerializer.serializeFunction(vectorFn),
+      options
+    };
+    
+    this.layers.push(layer);
     return this;
   }
 
@@ -224,34 +186,26 @@ export class ViewBuilder {
    * Add nullcline
    */
   nullcline(variable: string, options: NullclineOptions = {}): ViewBuilder {
-    this.layers.push({
-      type: 'nullcline',
-      options: {
-        variable,
-        color: options.color || 'blue',
-        linestyle: options.linestyle || 'dashed',
-        linewidth: options.linewidth || 1,
-        label: options.label || ''
-      }
-    });
+    const layer = {
+      type: 'nullcline' as const,
+      selector: variable,
+      options
+    };
+    this.layers.push(layer);
     return this;
   }
 
   /**
    * Add Poincaré section
    */
-  poincare(section: (state: State) => boolean, options: PoincareOptions = { section: () => false }): ViewBuilder {
-    this.layers.push({
-      type: 'poincare',
-      selector: this.serializeFunction(section),
-      options: {
-        section: section, // Keep original function for reference
-        direction: options.direction || 'positive',
-        marker: options.marker || 'circle',
-        color: options.color || 'red',
-        size: options.size || 4
-      }
-    });
+  poincare(section: (state: State) => boolean, options: PoincareOptions = {}): ViewBuilder {
+    const layer = {
+      type: 'poincare' as const,
+      selector: FunctionSerializer.serializeFunction(section),
+      options
+    };
+    
+    this.layers.push(layer);
     return this;
   }
 
@@ -283,28 +237,7 @@ export class ViewBuilder {
     this.timeline = timeline;
   }
 
-  /**
-   * Serialize function or selector for HTML embedding
-   */
-  private serializeFunction(fn: SceneFunction | VectorFunction | SelectorFunction | ((state: State) => boolean) | ((state: State, params: Params) => { dx: number; dy: number })): string {
-    return fn ? fn.toString() : 'undefined';
-  }
-
-  /**
-   * Detect if selector function is parametric (returns [x, y])
-   */
-  private detectParametricSelector(selector: SelectorFunction): boolean {
-    try {
-      // Test with sample state to see if function returns array (parametric) or number (scalar)
-      const testState = { x: 1, y: 2, z: 3 };
-      const result = selector(testState);
-      return Array.isArray(result) && result.length === 2;
-    } catch {
-      // If we can't determine, assume non-parametric
-      return false;
-    }
-  }
-
+  
   /**
    * Convert to ViewDescriptor for HTML rendering
    */
