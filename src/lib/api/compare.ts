@@ -17,11 +17,11 @@ export interface CompareConfig {
 }
 
 export interface CompareOptions {
-  /** Container width (default: 'auto') */
+  /** Container width */
   width?: number | string;
-  /** Container height in pixels (default: auto) */
+  /** Container height in pixels */
   height?: number | string;
-  /** Target element or ID for rendering (default: creates new element) */
+  /** Target element or ID for rendering */
   target?: string | HTMLElement;
 }
 

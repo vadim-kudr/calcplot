@@ -4,9 +4,131 @@
   color: black;
 }
 
+/* Global grid variables */
+:root {
+  /* Grid variables */
+  --calcplot-grid-gap: 10px;
+  --calcplot-grid-padding: 12px;  
+}
+
+.calcplot {
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* Controls styles */
+.calcplot-explore-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  container-type: inline-size;
+  max-width: 50%;
+}
+
+.calcplot-controls {
+  margin: 0.5rem var(--controls-margin-right) 1.25rem var(--controls-margin-left);
+  display: flex;
+  flex-direction: column;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  min-height: 40px;
+}
+
+.control-group .label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.control-group label {
+  font-weight: 500;
+  margin: 0;
+  font-size: 13px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 6px;
+}
+
+.control-group .value-display {
+  font-family: monospace;
+  font-size: 12px;
+  color: #374151;
+  min-width: 50px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.control-group input[type="checkbox"] {
+  transform: scale(1.1);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Grid layout based on container width - simplified for single column controls */
+/* @container (max-width: 899px) {
+  .calcplot-controls {
+    margin: var(--controls-margin-top) var(--controls-margin-right) var(--controls-margin-bottom) var(--controls-margin-left);
+  }
+}
+
+@container (min-width: 900px) and (max-width: 1199px) {
+  .calcplot-controls {
+    margin: var(--controls-margin-top) var(--controls-margin-right) var(--controls-margin-bottom) var(--controls-margin-left);
+  }
+}
+
+@container (min-width: 1200px) {
+  .calcplot-controls {
+    margin: var(--controls-margin-top) var(--controls-margin-right) var(--controls-margin-bottom) var(--controls-margin-left);
+  }
+} */
+
+/* Mobile responsive styles */
+@media (max-width: var(--calcplot-mobile-breakpoint)) {
+  .calcplot-controls {
+    margin: 8px;
+    gap: 4px;
+    max-width: 100% !important;
+  }
+  .control-group {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+    gap: 3px;
+  }
+  .control-group label {
+    min-width: auto;
+    text-align: center;
+    margin-bottom: 2px;
+    font-size: 12px;
+  }
+  .control-group input[type="range"] {
+    min-width: auto;
+    width: 100%;
+  }
+  .control-group .value-display {
+    min-width: auto;
+    text-align: center;
+    margin-top: 2px;
+    font-size: 11px;
+  }
+}
+
 .calcplot-style svg {
   display: block;
   margin: 0 auto;
+  width: 100%;
+  height: 100%; /* SVG should fill container, not dictate its size */
+  box-sizing: border-box;
 }
 
 .calcplot-style .plot-group {
@@ -96,14 +218,74 @@
   text-anchor: middle;
 }
 
-/* Calcplot color palette (tab10) */
-.calcplot-style .color-0 { stroke: #1f77b4; fill: #1f77b4; }
-.calcplot-style .color-1 { stroke: #ff7f0e; fill: #ff7f0e; }
-.calcplot-style .color-2 { stroke: #2ca02c; fill: #2ca02c; }
-.calcplot-style .color-3 { stroke: #d62728; fill: #d62728; }
-.calcplot-style .color-4 { stroke: #9467bd; fill: #9467bd; }
-.calcplot-style .color-5 { stroke: #8c564b; fill: #8c564b; }
-.calcplot-style .color-6 { stroke: #e377c2; fill: #e377c2; }
-.calcplot-style .color-7 { stroke: #7f7f7f; fill: #7f7f7f; }
-.calcplot-style .color-8 { stroke: #bcbd22; fill: #bcbd22; }
-.calcplot-style .color-9 { stroke: #17becf; fill: #17becf; }
+/* Calcplot color palette (using CSS variables) */
+.calcplot-style .color-0 { stroke: var(--calcplot-color-0); fill: var(--calcplot-color-0); }
+.calcplot-style .color-1 { stroke: var(--calcplot-color-1); fill: var(--calcplot-color-1); }
+.calcplot-style .color-2 { stroke: var(--calcplot-color-2); fill: var(--calcplot-color-2); }
+.calcplot-style .color-3 { stroke: var(--calcplot-color-3); fill: var(--calcplot-color-3); }
+.calcplot-style .color-4 { stroke: var(--calcplot-color-4); fill: var(--calcplot-color-4); }
+.calcplot-style .color-5 { stroke: var(--calcplot-color-5); fill: var(--calcplot-color-5); }
+.calcplot-style .color-6 { stroke: var(--calcplot-color-6); fill: var(--calcplot-color-6); }
+.calcplot-style .color-7 { stroke: var(--calcplot-color-7); fill: var(--calcplot-color-7); }
+.calcplot-style .color-8 { stroke: var(--calcplot-color-8); fill: var(--calcplot-color-8); }
+.calcplot-style .color-9 { stroke: var(--calcplot-color-9); fill: var(--calcplot-color-9); }
+
+/* Container for multiple views */
+.calcplot-view-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /* If height is set in JS (Npx), cells should stretch */
+  align-items: stretch; 
+}
+
+.calcplot-view-item {
+  width: 100%;
+  height: 100%;
+  min-height: 0; /* IMPORTANT: allows shrinking smaller than content */
+  overflow: hidden;
+}
+
+/* When in "one below another" mode on mobile */
+@media (max-width: var(--calcplot-mobile-breakpoint)) {
+  .calcplot-view-grid.mode-multi-view {
+    height: auto !important; /* Allow scrolling */
+  }
+  
+  .calcplot-view-item {
+    height: var(--calcplot-mobile-view-height) !important; /* Fixed height for mobile scrolling */
+  }
+}
+
+/* When we explicitly set height for the entire container in JS */
+.calcplot-view-grid.mode-fixed-height {
+  height: 100%; /* Stretch to all parent pixels */
+  grid-auto-rows: 1fr; /* Divide available height equally between rows */
+}
+
+/* --- Container size modes --- */
+
+/* Fixed width mode - center the grid */
+.calcplot-view-grid.mode-fixed-width {
+  margin: 0 auto;
+}
+
+/* Fixed height mode - distribute height evenly */
+.calcplot-view-grid.mode-fixed-height {
+  grid-auto-rows: 1fr;
+}
+
+/* --- Special modifiers --- */
+
+/* Single view always takes full space */
+.calcplot-view-grid.single-view {
+  grid-template-columns: 1fr;
+}
+
+/* Force 2 columns on large screens (optional) */
+@media (min-width: 1200px) {
+  .calcplot-view-grid.force-cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

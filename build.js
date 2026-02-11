@@ -12,6 +12,7 @@ const isVerbose = args.includes('--verbose');
 const isServe = args.includes('--serve');
 const isExamplesOnly = args.includes('--examples-only');
 const port = args.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8080';
+const filterPattern = args.find(arg => arg.startsWith('--filter='))?.split('=')[1];
 
 if (args.includes('--help') || args.includes('-h')) {
   console.log(`🚀 CalcPlot Build
@@ -24,8 +25,15 @@ Options:
   --serve         Start server after build
   --examples-only Build examples only
   --port=N        Server port (default: 8080)
+  --filter=PATTERN Filter examples by regex pattern (relative path)
   --verbose       Detailed output
-  --help          Show help`);
+  --help          Show help
+
+Examples:
+  node build.js --examples-only --filter="01-interactive-oscillator"
+  node build.js --examples-only --filter="04-interactive.*"
+  node build.js --examples-only --filter=".*-oscillator.*"
+  node build.js --examples-only --serve --filter="01-basics"`);
   process.exit(0);
 }
 
@@ -155,6 +163,12 @@ async function buildExamplesBundle() {
   
   // Build examples
   const exampleBuilder = new ExampleBuilder();
+  
+  // Set filter if specified
+  if (filterPattern) {
+    exampleBuilder.setFilter(filterPattern);
+  }
+  
   await exampleBuilder.build();
 }
 
@@ -195,6 +209,12 @@ async function build() {
   
   // Build examples
   const exampleBuilder = new ExampleBuilder();
+  
+  // Set filter if specified
+  if (filterPattern) {
+    exampleBuilder.setFilter(filterPattern);
+  }
+  
   await exampleBuilder.build();
   
   if (isServe) {

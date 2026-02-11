@@ -43,6 +43,7 @@ explore(model, {
       xLabel: 'Time (s)', 
       yLabel: 'Value'
     })
+    .grid()
     .title('Interactive Damped Oscillator')
 });
 

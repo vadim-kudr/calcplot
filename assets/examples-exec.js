@@ -58,151 +58,122 @@ function showCategoryExamples(categoryId) {
     });
     
     // Show the target category group
-    const targetGroup = document.getElementById(`category-${categoryId}`);
+    const targetGroup = document.getElementById(categoryId);
     if (targetGroup) {
         targetGroup.style.display = 'block';
+        
+        // Force resize of all CalcPlot containers in the visible category
+        setTimeout(() => {
+            if (targetGroup) {
+                targetGroup.querySelectorAll('.calcplot-container').forEach(container => {
+                    // Trigger resize event for any charts inside
+                    const resizeEvent = new Event('resize');
+                    container.dispatchEvent(resizeEvent);
+                    
+                    // Also resize any SVG or canvas elements
+                    container.querySelectorAll('svg, canvas').forEach(element => {
+                        element.dispatchEvent(resizeEvent);
+                    });
+                });
+            }
+        }, 100);
     }
-    
-    // Force resize of all CalcPlot containers in the visible category
-    setTimeout(() => {
-        targetGroup.querySelectorAll('.calcplot-container').forEach(container => {
-            // Trigger resize event for any charts inside
-            const resizeEvent = new Event('resize');
-            container.dispatchEvent(resizeEvent);
-            
-            // Also resize any SVG or canvas elements
-            container.querySelectorAll('svg, canvas').forEach(element => {
-                element.dispatchEvent(resizeEvent);
-            });
-        });
-    }, 100);
     
     // Examples are already executed from initial load, no need to re-execute
 }
 
 function hideCategoryExamples(categoryId) {
     // Hide the target category group
-    const targetGroup = document.getElementById(`category-${categoryId}`);
+    const targetGroup = document.getElementById(categoryId);
     if (targetGroup) {
         targetGroup.style.display = 'none';
     }
 }
 
-// Auto-expand first category and show its examples
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for hash in URL
-    const hash = window.location.hash.substring(1); // Remove #
+// Toggle sidebar visibility
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+    
+    if (sidebar.classList.contains('hidden')) {
+        sidebar.classList.remove('hidden');
+        mainContent.classList.remove('full-width');
+    } else {
+        sidebar.classList.add('hidden');
+        mainContent.classList.add('full-width');
+    }
+}
+
+// Handle hash navigation
+function handleHash() {
+    const hash = window.location.hash.substring(1);
+    console.log('Hash:', hash);
     
     if (hash) {
-        // Find example by ID
-        const targetExample = document.getElementById(hash);
-        if (targetExample) {
-            const categoryId = targetExample.getAttribute('data-category');
-            
-            // Find and expand the category
-            const categoryHeader = document.querySelector(`[onclick="toggleCategory('${categoryId}')"]`);
-            if (categoryHeader) {
-                // Close all other categories first
-                document.querySelectorAll('.nav-category').forEach(cat => {
-                    const otherCategoryId = cat.querySelector('.nav-examples').id.replace('examples-', '');
-                    if (otherCategoryId !== categoryId) {
-                        const otherExamples = document.getElementById(`examples-${otherCategoryId}`);
-                        const otherToggle = document.getElementById(`toggle-${otherCategoryId}`);
-                        otherExamples.classList.remove('expanded');
-                        otherToggle.classList.remove('expanded');
-                        updateToggleArrow(otherCategoryId, false);
-                    }
-                });
-                
-                // Expand target category
-                const examples = document.getElementById(`examples-${categoryId}`);
-                const toggle = document.getElementById(`toggle-${categoryId}`);
-                examples.classList.add('expanded');
-                toggle.classList.add('expanded');
-                updateToggleArrow(categoryId, true);
-                
-                // Show examples of this category
-                showCategoryExamples(categoryId);
-                activeCategory = categoryId;
-                
-                // Scroll to example
-                setTimeout(() => {
-                    targetExample.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
+        // Find example or category by ID
+        const targetElement = document.getElementById(hash);
+        console.log('Target element:', targetElement);
+        
+        if (targetElement) {
+            if (targetElement.classList.contains('example')) {
+                // It's an example
+                const categoryId = targetElement.getAttribute('data-category');
+                showCategory(categoryId);
+            } else if (targetElement.classList.contains('category-group')) {
+                // It's a category
+                showCategory(hash);
             }
         } else {
-            // No hash, show first category
-            const firstCategory = document.querySelector('.nav-category');
-            if (firstCategory) {
-                const categoryId = firstCategory.querySelector('.nav-examples').id.replace('examples-', '');
-                // Expand first category
-                const examples = document.getElementById(`examples-${categoryId}`);
-                const toggle = document.getElementById(`toggle-${categoryId}`);
-                examples.classList.add('expanded');
-                toggle.classList.add('expanded');
-                updateToggleArrow(categoryId, true);
-                // Show examples of first category
-                showCategoryExamples(categoryId);
-                activeCategory = categoryId;
-            }
+            showFirstCategory();
         }
     } else {
-        // No hash, show first category
-        const firstCategory = document.querySelector('.nav-category');
-        if (firstCategory) {
-            const categoryId = firstCategory.querySelector('.nav-examples').id.replace('examples-', '');
-            // Expand first category
-            const examples = document.getElementById(`examples-${categoryId}`);
-            const toggle = document.getElementById(`toggle-${categoryId}`);
-            examples.classList.add('expanded');
-            toggle.classList.add('expanded');
-            updateToggleArrow(categoryId, true);
-            // Show examples of first category
-            showCategoryExamples(categoryId);
-            activeCategory = categoryId;
-        }
+        showFirstCategory();
     }
+}
+
+// Show specific category
+function showCategory(categoryId) {
+    // Close all other categories first
+    document.querySelectorAll('.nav-category').forEach(cat => {
+        const otherCategoryId = cat.querySelector('.nav-examples').id.replace('examples-', '');
+        if (otherCategoryId !== categoryId) {
+            const otherExamples = document.getElementById(`examples-${otherCategoryId}`);
+            const otherToggle = document.getElementById(`toggle-${otherCategoryId}`);
+            otherExamples.classList.remove('expanded');
+            otherToggle.classList.remove('expanded');
+            updateToggleArrow(otherCategoryId, false);
+            hideCategoryExamples(otherCategoryId);
+        }
+    });
     
-    // Execute ALL examples on page load
+    // Expand target category
+    const examples = document.getElementById(`examples-${categoryId}`);
+    const toggle = document.getElementById(`toggle-${categoryId}`);
+    examples.classList.add('expanded');
+    toggle.classList.add('expanded');
+    updateToggleArrow(categoryId, true);
+    
+    showCategoryExamples(categoryId);
+    activeCategory = categoryId;
+}
+
+// Show first category (fallback)
+function showFirstCategory() {
+    const firstCategory = document.querySelector('.nav-category');
+    if (firstCategory) {
+        const categoryId = firstCategory.querySelector('.nav-examples').id.replace('examples-', '');
+        showCategory(categoryId);
+    }
+}
+
+// Auto-expand first category and show its examples
+document.addEventListener('DOMContentLoaded', function() {
+    handleHash();
     executeAllExamples();
 });
 
 // Handle hash changes
-window.addEventListener('hashchange', function() {
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-        const targetExample = document.getElementById(hash);
-        if (targetExample) {
-            const categoryId = targetExample.getAttribute('data-category');
-            
-            // Close all other categories first
-            document.querySelectorAll('.nav-category').forEach(cat => {
-                const otherCategoryId = cat.querySelector('.nav-examples').id.replace('examples-', '');
-                if (otherCategoryId !== categoryId) {
-                    const otherExamples = document.getElementById(`examples-${otherCategoryId}`);
-                    const otherToggle = document.getElementById(`toggle-${otherCategoryId}`);
-                    otherExamples.classList.remove('expanded');
-                    otherToggle.classList.remove('expanded');
-                    updateToggleArrow(otherCategoryId, false);
-                }
-            });
-            
-            // Expand target category
-            const examples = document.getElementById(`examples-${categoryId}`);
-            const toggle = document.getElementById(`toggle-${categoryId}`);
-            examples.classList.add('expanded');
-            toggle.classList.add('expanded');
-            updateToggleArrow(categoryId, true);
-            
-            showCategoryExamples(categoryId);
-            activeCategory = categoryId;
-            
-            setTimeout(() => {
-                targetExample.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-        }
-    }
-});
+window.addEventListener('hashchange', handleHash);
 
 // Copy code function
 function copyCode(codeId) {

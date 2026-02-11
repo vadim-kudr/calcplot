@@ -39,6 +39,7 @@ show(trajectory, view()
     xLabel: 'Time (s)', 
     yLabel: 'Value'
   })
+  .grid()
   .title('Free Fall: Gravity Acceleration')
 );
 

@@ -50,11 +50,16 @@ export function createSlider(container: HTMLElement, props: SliderProps): HTMLIn
 
   const labelElement = label({ htmlFor: inputId }, props.control.label);
 
+  const labelRow = div(
+    { className: 'label-row' },
+    labelElement,
+    valueDisplay
+  );
+
   const controlGroup = div(
     { className: 'control-group' },
-    labelElement,
-    inputElement,
-    valueDisplay
+    labelRow,
+    inputElement
   );
   container.appendChild(controlGroup);
 

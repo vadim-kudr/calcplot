@@ -27,9 +27,9 @@ export class D3ScaleFactory {
    */
   static readonly DEFAULT_MARGINS: ChartMargins = {
     top: 50,
-    right: 50,
-    bottom: 80,
-    left: 100
+    right: 20,
+    bottom: 55,
+    left: 75
   };
 
   /**
@@ -66,31 +66,27 @@ export class D3ScaleFactory {
   /**
    * Create a linear scale for x-axis with plot area margins
    */
-  static createXScale(width: number, domain: [number, number] = [0, 10]): d3.ScaleLinear<number, number> {
-    const leftMargin = 80;
-    const rightMargin = 50;
+  static createXScale(width: number, domain: [number, number] = [0, 10], margins: ChartMargins = this.DEFAULT_MARGINS): d3.ScaleLinear<number, number> {
     return d3.scaleLinear()
       .domain(domain)
-      .range([leftMargin, width - rightMargin]);
+      .range([margins.left, width - margins.right]);
   }
 
   /**
    * Create a linear scale for y-axis with plot area margins
    */
-  static createYScale(height: number, domain: [number, number] = [0, 10]): d3.ScaleLinear<number, number> {
-    const topMargin = 50;
-    const bottomMargin = 50;
+  static createYScale(height: number, domain: [number, number] = [0, 10], margins: ChartMargins = this.DEFAULT_MARGINS): d3.ScaleLinear<number, number> {
     return d3.scaleLinear()
       .domain(domain)
-      .range([height - bottomMargin, topMargin]);
+      .range([height - margins.bottom, margins.top]);
   }
 
   /**
    * Create both x and y scales (full SVG dimensions)
    */
-  static createScales(width: number, height: number, xDomain: [number, number] = [0, 10], yDomain: [number, number] = [0, 10]) {
-    const xScale = this.createXScale(width, xDomain);
-    const yScale = this.createYScale(height, yDomain);
+  static createScales(width: number, height: number, xDomain: [number, number] = [0, 10], yDomain: [number, number] = [0, 10], margins: ChartMargins = this.DEFAULT_MARGINS) {
+    const xScale = this.createXScale(width, xDomain, margins);
+    const yScale = this.createYScale(height, yDomain, margins);
     return { xScale, yScale };
   }
 
@@ -111,16 +107,12 @@ export class D3ScaleFactory {
   static updateScaleRanges(scales: {
     xScale: d3.ScaleLinear<number, number>;
     yScale: d3.ScaleLinear<number, number>;
-  }, width: number, height: number, aspectRatio?: string): void {
-    const leftMargin = 80;
-    const rightMargin = 50;
-    const topMargin = 50;
-    const bottomMargin = 50;
+  }, width: number, height: number, margins: ChartMargins = this.DEFAULT_MARGINS, aspectRatio?: string): void {
     
     if (aspectRatio === 'equal') {
       // Calculate plot dimensions
-      const plotWidth = width - leftMargin - rightMargin;
-      const plotHeight = height - topMargin - bottomMargin;
+      const plotWidth = width - margins.left - margins.right;
+      const plotHeight = height - margins.top - margins.bottom;
       
       // Use the smaller dimension for both to maintain aspect ratio
       const size = Math.min(plotWidth, plotHeight);
@@ -129,11 +121,11 @@ export class D3ScaleFactory {
       const xPadding = (plotWidth - size) / 2;
       const yPadding = (plotHeight - size) / 2;
       
-      scales.xScale.range([leftMargin + xPadding, width - rightMargin - xPadding]);
-      scales.yScale.range([height - bottomMargin - yPadding, topMargin + yPadding]);
+      scales.xScale.range([margins.left + xPadding, width - margins.right - xPadding]);
+      scales.yScale.range([height - margins.bottom - yPadding, margins.top + yPadding]);
     } else {
-      scales.xScale.range([leftMargin, width - rightMargin]);
-      scales.yScale.range([height - bottomMargin, topMargin]);
+      scales.xScale.range([margins.left, width - margins.right]);
+      scales.yScale.range([height - margins.bottom, margins.top]);
     }
   }
 }

@@ -9,7 +9,6 @@ export type { Control, SliderControl, CheckboxControl } from '../lib/controls';
 // Plots - renderers and services
 export { ViewRenderer } from './plots/renderers/ViewRenderer';
 export { SVGManager } from './plots/services/SVGManager';
-export { ResizeManager } from './plots/services/ResizeManager';
 export { LayerRendererFactory } from './plots/renderers';
 
 // Plot utilities

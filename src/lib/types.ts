@@ -18,6 +18,11 @@ export interface SerializedTimeline {
   states: Record<string, number[]>;
 }
 
+export interface ContainerSize {
+  width: number;
+  height: number;
+}
+
 export interface ViewConfig {
   layers: Layer[];
   controls?: Record<string, unknown>;
@@ -28,8 +33,8 @@ export interface ViewDescriptor extends ViewConfig {
     times: number[];
     states: Record<string, number[]>;
   };
-  width?: number;
-  height?: number;
+  width?: number | string;
+  height?: number | string;
 }
 
 export interface ShowDescriptor {

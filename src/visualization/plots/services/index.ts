@@ -3,5 +3,4 @@
  */
 
 export { SVGManager } from './SVGManager';
-export { ResizeManager } from './ResizeManager';
-export type { SVGManagerOptions, ResizeManagerOptions } from './SVGManager';
+export type { SVGManagerOptions } from './SVGManager';

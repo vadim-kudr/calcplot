@@ -40,6 +40,7 @@ show(trajectory, [
       xLabel: 'Time (s)', 
       yLabel: 'Value'
     })
+    .grid()
     .title('Harmonic Oscillator: Time Series'),
   
   // Phase portrait view
@@ -50,6 +51,7 @@ show(trajectory, [
       yLabel: 'Velocity',
       aspectRatio: 'equal'
     })
+    .grid()
     .title('Phase Portrait')
 ]);
 

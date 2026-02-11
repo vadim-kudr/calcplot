@@ -7,9 +7,18 @@
     <link rel="stylesheet" href="./examples-bundle.css">
 </head>
 <body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+        <div class="mobile-title">CalcPlot Examples</div>
+        <div></div>
+    </header>
+
     <aside class="sidebar">
         <div class="sidebar-header">
             <h1>CalcPlot Examples</h1>
+            <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
+            <button class="mobile-close-btn" onclick="toggleMobileMenu()">✕</button>
         </div>
         
         <nav>
@@ -18,7 +27,7 @@
                 <li class="nav-category">
                     <div class="nav-category-header" onclick="toggleCategory('{{categoryId}}')">
                         <div style="display: flex; align-items: center;">
-                            <a href="#{{categoryId}}" class="nav-category-link">{{title}}</a>
+                            <span class="nav-category-link" onclick="event.preventDefault(); window.location.hash='{{categoryId}}';">{{title}}</span>
                             <span class="nav-toggle" id="toggle-{{categoryId}}">▲</span>
                         </div>
                         <span class="nav-count">{{count}}</span>
@@ -38,7 +47,7 @@
 
     <main class="main-content">
         {{#each examples}}
-        <div class="category-group" id="category-{{categoryId}}" data-category="{{categoryId}}">
+        <div class="category-group" id="{{categoryId}}" data-category="{{categoryId}}">
             <h2 class="category-title">{{title}}</h2>
             <div class="examples-container">
                 {{#each examples}}
@@ -69,6 +78,25 @@
 
     <script src="/calcplot.js"></script>
     <script>
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.querySelector('.sidebar');
+            const mobileHeader = document.querySelector('.mobile-header');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !mobileHeader.contains(event.target) &&
+                sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
         // Export CalcPlot functions to window
         if (typeof CalcPlot !== 'undefined') {
             window.defineIVP = CalcPlot.defineIVP;
@@ -81,7 +109,6 @@
             window.defineModel = CalcPlot.defineModel;
             window.defineEvent = CalcPlot.defineEvent;
             window.defineController = CalcPlot.defineController;
-            console.log('Functions exported to window');
         } else {
             console.error('CalcPlot not loaded!');
         }

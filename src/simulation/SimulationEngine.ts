@@ -14,11 +14,6 @@ export interface SimulationData {
 }
 
 export class SimulationEngine {
-  private log: (...args: unknown[]) => void;
-
-  constructor(log: (...args: unknown[]) => void) {
-    this.log = log;
-  }
 
   simulateTrajectory(data: SimulationData, initialState: State, params: Params): { times: number[]; states: Record<string, number[]> } {
     // Validate initialState and merge model params with explore params

@@ -9,6 +9,7 @@ import { view } from '../lib/builders/ViewBuilder';
 import { initializeExplore } from './managers/ExploreManager';
 import { initializeShow } from './managers/ShowManager';
 import { initializeCompare } from './managers/CompareManager';
+import { initializeCSSVariables } from './utils/CSSVariables';
 import { AnyDescriptor } from '../lib/types';
 
 // Make components available globally for client
@@ -23,38 +24,34 @@ if (typeof globalThis !== 'undefined') {
 // Main initialization function
 export function initializeClient(
   container: HTMLElement,
-  data?: AnyDescriptor,
-  debugLog?: (...args: unknown[]) => void
+  data?: AnyDescriptor
 ): void {
-  const log =
-    debugLog ||
-    function (...args: unknown[]) {
-      console.log('[calcplot]', ...args);
-    };
+  // Initialize CSS variables first
+  initializeCSSVariables();
 
   const calcData = data || (window as any).calcPlotData;
   if (!calcData) {
-    log('No calcplot data found');
+    console.warn('[calcplot] No calcplot data found');
     return;
   }
 
   if (!container) {
-    log('No container provided - visualization skipped');
+    console.warn('[calcplot] No container provided - visualization skipped');
     return;
   }
 
   // Handle different data types
   if (calcData && 'type' in calcData) {
     if (calcData.type === 'explore') {
-      initializeExplore(calcData as any, container, log);
+      initializeExplore(calcData as any, container);
     } else if (calcData.type === 'show') {
-      initializeShow(calcData as any, container, log);
+      initializeShow(calcData as any, container);
     } else if (calcData.type === 'compare') {
-      initializeCompare(calcData as any, container, log);
+      initializeCompare(calcData as any, container);
     } else {
-      log('Unknown data type:', (calcData as any).type);
+      console.warn('[calcplot] Unknown data type:', (calcData as any).type);
     }
   } else {
-    log('Invalid data format - missing type property');
+    console.warn('[calcplot] Invalid data format - missing type property');
   }
 }

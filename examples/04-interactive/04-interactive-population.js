@@ -41,6 +41,7 @@ explore(model, {
       xLabel: 'Time', 
       yLabel: 'Population'
     })
+    .grid()
     .title('Interactive Population Dynamics')
 });
 

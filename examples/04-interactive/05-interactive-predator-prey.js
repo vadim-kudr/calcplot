@@ -48,6 +48,7 @@ explore(model, {
         xLabel: 'Time', 
         yLabel: 'Population'
       })
+      .grid()
       .title('Population Dynamics'),
     
     // Phase space

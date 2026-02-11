@@ -21,7 +21,7 @@ export interface SerializedTimeline {
 
 export interface SerializedFunction {
   body: string;           // "return s.vx"
-  params: string[];       // ["s"] или ["state", "params"]
+  params: string[];       // ["s"] or ["state", "params"]
 }
 
 /**

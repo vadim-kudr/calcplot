@@ -2,7 +2,7 @@
  * View Renderer - handles D3-based SVG rendering with simple architecture
  */
 
-import { SVGManager, ResizeManager } from '../services';
+import { SVGManager } from '../services';
 import { LayerRendererFactory } from './LayerRendererFactory';
 import { BoundsCalculator, D3ScaleFactory } from '../utils';
 import type { RenderContext } from '../interfaces';
@@ -11,7 +11,6 @@ import type { Layer } from '../interfaces';
 import type { PlotOptions } from '../renderers/PlotRenderer';
 import type { AxisOptions } from '../renderers/AxisRenderer';
 import type { Timeline, State, Params } from '../../../core/types';
-import type { ViewDescriptor } from '../../../lib/types';
 
 export interface VisualizationData {
   type: 'view' | 'explore';
@@ -30,47 +29,36 @@ export interface VisualizationData {
 export class ViewRenderer {
   private static isCalcplotStylesLoading = false;
   private static isCalcplotStylesLoaded = false;
+  private static readonly renderOrder = [
+    'title',
+    'axis',
+    'grid',
+    'vectorField',
+    'nullcline',
+    'fill',
+    'plot',
+    'refline',
+    'poincare',
+    'legend'
+  ] as const;
 
   private container: HTMLElement;
   private svgManager: SVGManager;
-  private resizeManager: ResizeManager;
   private layerRendererFactory: LayerRendererFactory;
   private boundsCalculator: typeof BoundsCalculator;
   private currentData?: VisualizationData;
-  private log: (...args: unknown[]) => void;
-  
-  // Resize control mechanism
-  private isResizing = false;
-  private targetWidth: number;
-  private targetHeight: number;
-  private resizeTimeout?: number;
 
-  constructor(
-    container: HTMLElement,
-    width: number = 800,
-    height: number = 480,
-    log: (...args: unknown[]) => void
-  ) {
+  constructor(container: HTMLElement, width?: number, height?: number) {
     this.container = container;
-    this.log = log;
-    this.targetWidth = width;
-    this.targetHeight = height;
-
-    // Apply Calcplot styles
-    this.applyCalcplotStyles();
-
-    // Initialize simple services
-    this.svgManager = new SVGManager(container, {
-      width,
-      height,
-      defaultBounds: { x: [0, 10], y: [0, 10] }
-    });
-
-    // Re-enable resize manager with proper control
-    this.resizeManager = new ResizeManager(container, this.onResize.bind(this), { debounceMs: 16 });
-
+    this.svgManager = new SVGManager(container, { width, height });
     this.layerRendererFactory = new LayerRendererFactory();
     this.boundsCalculator = BoundsCalculator;
+    this.applyCalcplotStyles();
+  }
+
+  // Public getter for SVGManager to access margins
+  getSVGManager(): SVGManager {
+    return this.svgManager;
   }
 
   /**
@@ -81,7 +69,7 @@ export class ViewRenderer {
     if (!this.container.classList.contains('calcplot-style')) {
       this.container.classList.add('calcplot-style', 'calcplot-view');
     }
-    
+
     // Check if styles are already loaded or loading
     if (ViewRenderer.isCalcplotStylesLoaded || ViewRenderer.isCalcplotStylesLoading) {
       return;
@@ -92,79 +80,40 @@ export class ViewRenderer {
 
     // Import CSS dynamically from dist path
     fetch('/dist/calcplot-client.css')
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error(`Failed to load CSS: ${response.status}`);
         }
         return response.text();
       })
-      .then(cssText => {
-      
-      // Create style element and inject CSS
-      const style = document.createElement('style');
-      style.id = 'calcplot-styles';
-      style.textContent = cssText;
-      document.head.appendChild(style);
-      
-      // Set loaded flag
-      ViewRenderer.isCalcplotStylesLoaded = true;
-      ViewRenderer.isCalcplotStylesLoading = false;
-    }).catch((error) => {
-      console.warn('Failed to load calcplot styles:', error);
-      ViewRenderer.isCalcplotStylesLoading = false;
-    });
-  }
+      .then((cssText) => {
+        // Create style element and inject CSS
+        const style = document.createElement('style');
+        style.id = 'calcplot-styles';
+        style.textContent = cssText;
+        document.head.appendChild(style);
 
-  /**
-   * Handle resize events with proper control mechanism
-   */
-  private onResize(width: number, height: number): void {
-    // Only update if size actually changed and not already resizing
-    if ((width !== this.targetWidth || height !== this.targetHeight) && !this.isResizing) {
-      // Clear any pending resize
-      if (this.resizeTimeout) {
-        clearTimeout(this.resizeTimeout);
-      }
-      
-      // Debounce resize to prevent infinite loops
-      this.resizeTimeout = window.setTimeout(() => {
-        this.updateSize(width, height);
-      }, 16); // ~60fps
-    }
+        // Set loaded flag
+        ViewRenderer.isCalcplotStylesLoaded = true;
+        ViewRenderer.isCalcplotStylesLoading = false;
+      })
+      .catch((error) => {
+        console.warn('Failed to load calcplot styles:', error);
+        ViewRenderer.isCalcplotStylesLoading = false;
+      });
   }
 
   /**
    * Update size with proper control mechanism
    */
-  private updateSize(width: number, height: number): void {
-    if (this.isResizing) {
-      return;
-    }
-    
-    this.isResizing = true;
-    
-    // Only update if there's a significant change (more than 1px)
-    if (Math.abs(width - this.targetWidth) <= 1 && Math.abs(height - this.targetHeight) <= 1) {
-      this.isResizing = false;
-      return;
-    }
-    
-    // Update target dimensions
-    this.targetWidth = width;
-    this.targetHeight = height;
-    
+  public updateSize(width: number, height: number): void {
     // Resize SVG manager
     this.svgManager.resize(width, height);
-    
+
     // Re-render if we have current data
     if (this.currentData) {
       this.renderInternal(this.currentData);
     }
-    
-    // Reset flag after a short delay to allow DOM to settle
-    setTimeout(() => {
-      this.isResizing = false;
-    }, 50);
   }
 
   /**
@@ -172,7 +121,7 @@ export class ViewRenderer {
    */
   private extractLayers(data: VisualizationData): Layer[] {
     let layers = data.layers || [];
-    
+
     if (data.viewDescriptor && data.viewDescriptor.layers) {
       layers = data.viewDescriptor.layers;
     }
@@ -194,24 +143,29 @@ export class ViewRenderer {
     let finalBounds: Bounds;
     const boundsLayer = layers.find((layer: Layer) => layer.type === 'bounds');
 
-    if (boundsLayer && boundsLayer.bounds && typeof boundsLayer.bounds.x !== 'string' && typeof boundsLayer.bounds.y !== 'string') {
+    if (
+      boundsLayer &&
+      boundsLayer.bounds &&
+      typeof boundsLayer.bounds.x !== 'string' &&
+      typeof boundsLayer.bounds.y !== 'string'
+    ) {
       finalBounds = boundsLayer.bounds as Bounds;
     } else {
       finalBounds = this.boundsCalculator.calculateBoundsFromTimeline(
-      data.timeline || { times: [], states: {} } as unknown as Timeline, 
-      layers
-    );
+        data.timeline || ({ times: [], states: {} } as unknown as Timeline),
+        layers
+      );
     }
 
     // Check bounds validity and ensure positive dimensions
     if (!this.boundsCalculator.areBoundsValid(finalBounds)) {
-      this.log('Invalid bounds, using defaults');
+      console.warn('Invalid bounds, using defaults');
       finalBounds = { x: [0, 10], y: [0, 10] };
     }
 
     // Ensure bounds are not negative or zero
     if (finalBounds.x[1] <= finalBounds.x[0] || finalBounds.y[1] <= finalBounds.y[0]) {
-      this.log('Invalid bounds (negative or zero), using defaults');
+      console.warn('Invalid bounds (negative or zero), using defaults');
       finalBounds = { x: [0, 10], y: [0, 10] };
     }
 
@@ -219,14 +173,11 @@ export class ViewRenderer {
     // Extract aspectRatio from axis layer if present
     const axisLayer = layers.find((layer: Layer) => layer.type === 'axis');
     const aspectRatio = (axisLayer?.options as AxisOptions)?.aspectRatio?.toString();
-    
+
     this.svgManager.updateDomains(finalBounds.x, finalBounds.y, aspectRatio);
 
     // Get updated context with parameters
     const updatedContext = this.svgManager.getContext(data.params as any);
-    
-    // Add margins to context for all renderers
-    updatedContext.margins = D3ScaleFactory.getProportionalMargins(updatedContext.width, updatedContext.height);
 
     // Render layers using strategy pattern
     this.renderLayers(layers, updatedContext, data.timeline);
@@ -250,7 +201,12 @@ export class ViewRenderer {
       }
 
       // Collect legend items from plot layers
-      if (layer.type === 'plot' && layer.options && 'label' in layer.options && layer.options.label) {
+      if (
+        layer.type === 'plot' &&
+        layer.options &&
+        'label' in layer.options &&
+        layer.options.label
+      ) {
         const plotOptions = layer.options as PlotOptions;
         const layerWithIndex = layer as Layer & { index?: number };
         legendItems.push({
@@ -286,16 +242,15 @@ export class ViewRenderer {
 
     // Define rendering order: title -> axis -> grid -> vectorField -> nullcline -> fill -> plot -> refline -> poincare -> legend
     // Title first, then axis/grid for layout, then data layers, finally overlays
-    const renderOrder = ['title', 'axis', 'grid', 'vectorField', 'nullcline', 'fill', 'plot', 'refline', 'poincare', 'legend'];
-    
+
     // Render each layer type in the correct order
-    for (const layerType of renderOrder) {
+    for (const layerType of ViewRenderer.renderOrder) {
       if (!layersByType.has(layerType)) {
         continue; // Skip if no layers of this type
       }
-      
+
       const layerList = layersByType.get(layerType)!;
-      
+
       if (this.layerRendererFactory.hasRenderer(layerType)) {
         const renderer = this.layerRendererFactory.getRenderer(layerType);
 
@@ -312,7 +267,7 @@ export class ViewRenderer {
           });
         }
       } else {
-        this.log(`No renderer found for layer type: ${layerType}`);
+        console.warn(`No renderer found for layer type: ${layerType}`);
       }
     }
   }
@@ -322,10 +277,10 @@ export class ViewRenderer {
    */
   render(data: VisualizationData): void {
     if (!data.timeline) {
-      this.log('No timeline in data!', data);
+      console.warn('No timeline in data!', data);
       return;
     }
-    
+
     this.currentData = data;
     this.renderInternal(data);
   }
@@ -351,13 +306,6 @@ export class ViewRenderer {
   }
 
   /**
-   * Get the SVG manager for advanced operations
-   */
-  getSVGManager(): SVGManager {
-    return this.svgManager;
-  }
-
-  /**
    * Get current render context
    */
   getRenderContext(): RenderContext {
@@ -365,18 +313,10 @@ export class ViewRenderer {
   }
 
   /**
-   * Force a resize check
-   */
-  checkResize(): void {
-    this.resizeManager.checkResize();
-  }
-
-  /**
    * Destroy the renderer and clean up resources
    */
   destroy(): void {
     this.svgManager.destroy();
-    this.resizeManager.destroy();
     this.currentData = undefined;
   }
 }

@@ -13,6 +13,34 @@ export class ExampleBuilder {
     this.examples = [];
     this.outputDir = 'dist';
     this.templatePath = 'assets/templates/examples.hbs';
+    this.filterRegex = null;
+  }
+
+  setFilter(regexPattern) {
+    if (regexPattern) {
+      try {
+        this.filterRegex = new RegExp(regexPattern);
+        console.log(`🔍 Filtering examples with pattern: ${regexPattern}`);
+      } catch (error) {
+        console.error(`❌ Invalid regex pattern: ${regexPattern}`);
+        console.error(`Error: ${error.message}`);
+        process.exit(1);
+      }
+    }
+  }
+
+  filterExamples(examples) {
+    if (!this.filterRegex) {
+      return examples;
+    }
+    
+    const filtered = examples.filter(example => {
+      const relativePath = path.relative(process.cwd(), example.file);
+      return this.filterRegex.test(relativePath);
+    });
+    
+    console.log(`📊 Filtered ${examples.length} examples → ${filtered.length} examples`);
+    return filtered;
   }
 
   getCategoryTitle(category) {
@@ -167,12 +195,15 @@ export class ExampleBuilder {
       };
     });
 
+    // Apply filter if specified
+    const filteredExamples = this.filterExamples(examples);
+
     // Sort by filename
-    examples.sort((a, b) => a.file.localeCompare(b.file));
+    filteredExamples.sort((a, b) => a.file.localeCompare(b.file));
 
     // Generate data for template - group examples by category
     const examplesData = [];
-    const navigationData = this.generateNavigation(examples);
+    const navigationData = this.generateNavigation(filteredExamples);
     
     // Create examples with categoryId - group by category
     const categoryMap = {};
@@ -184,7 +215,7 @@ export class ExampleBuilder {
       };
     });
     
-    examples.forEach(example => {
+    filteredExamples.forEach(example => {
       const category = example.file.split('/').slice(-2)[0];
       const categoryId = category.replace(/^\d+_/, '');
       const exampleData = this.generateExampleHTML(example);
@@ -209,7 +240,7 @@ export class ExampleBuilder {
     const outputPath = path.join(this.outputDir, 'examples.html');
     fs.writeFileSync(outputPath, finalHTML);
     
-    console.log(`✅ Generated ${outputPath} with ${examples.length} examples`);
+    console.log(`✅ Generated ${outputPath} with ${filteredExamples.length} examples`);
     
     return outputPath;
   }

@@ -5,6 +5,8 @@
 import { createElement } from '../utils/html-tag';
 import { SliderControl, CheckboxControl } from '../../lib/controls';
 import { ExploreDescriptor } from '../../lib/types';
+import { D3ScaleFactory } from '../../visualization/plots/utils/D3ScaleFactory';
+import { ViewManager } from './ViewManager';
 
 // Runtime interfaces for dynamic controls
 interface RuntimeSliderControl extends SliderControl {
@@ -25,83 +27,64 @@ interface RuntimeExploreData extends ExploreDescriptor {
   params: RuntimeParams;
 }
 
-// Helper function to resolve dimensions
-export function resolveDimension(value: number | string | 'auto', container: HTMLElement, fallback: number, useClientWidth = false): number {
-  if (value === 'auto' && useClientWidth) {
-    const clientWidth = container.clientWidth;
-    // If clientWidth is 0 (container not rendered yet), use fallback
-    return (clientWidth && clientWidth > 0) ? clientWidth : fallback;
+// Update CSS variables with margins from ViewManager (single source of truth)
+function updateDynamicMargins(gridContainer: HTMLElement, viewManager: ViewManager): void {
+  // Get margins from ViewManager's SVGManager (single source of truth)
+  const margins = viewManager.getCurrentMargins();
+
+  if (!margins) {
+    return;
   }
-  if (typeof value === 'number') {
-    return value;
-  }
-  return fallback;
+
+  // Use margins from graphs for top/bottom, but fixed left margin for controls and slightly smaller right margin
+  const controlsTop = '0px';
+  const controlsRight = `${margins.right}px`;
+  const controlsBottom = '';
+  const controlsLeft = `${margins.left}px`;
+
+  // Update CSS variables
+  gridContainer.style.setProperty('--controls-margin-top', controlsTop);
+  gridContainer.style.setProperty('--controls-margin-right', controlsRight);
+  gridContainer.style.setProperty('--controls-margin-bottom', controlsBottom);
+  gridContainer.style.setProperty('--controls-margin-left', controlsLeft);
 }
 
 // Create controls for explore mode
 export function createControls(
   data: RuntimeExploreData,
   container: HTMLElement,
+  viewManager: ViewManager, // Pass ViewManager to get proper margins
   options?: {
-    log?: (...args: unknown[]) => void;
     onUpdate?: () => void;
   }
 ): void {
-  // Add CSS styles
-  const style = createElement('style', {
-    textContent: `
-      .calcplot-controls {
-        margin: 16px 12px;
-        display: table;
-        border-collapse: collapse;
-      }
-      .control-group {
-        display: table-row;
-        height: 24px;
-      }
-      .control-group label {
-        display: table-cell;
-        font-weight: 500;
-        margin: 0;
-        font-size: 14px;
-        text-align: right;
-        padding-right: 12px;
-        padding-left: 2px;
-        vertical-align: middle;
-        white-space: nowrap;
-      }
-      .control-group input[type="range"] {
-        display: table-cell;
-        margin: 0;
-        vertical-align: middle;
-        width: 150px;
-        padding: 0;
-      }
-      .control-group .value-display {
-        display: table-cell;
-        text-align: left;
-        font-family: monospace;
-        font-size: 14px;
-        color: #374151;
-        vertical-align: middle;
-        width: 60px;
-        padding-left: 12px;
-        padding-right: 2px;
-      }
-      .control-group input[type="checkbox"] {
-        display: table-cell;
-        margin: 0;
-        transform: scale(1.2);
-        vertical-align: middle;
-      }
-    `
-  });
-  container.appendChild(style);
-
   const controlsDiv = createElement('div', {
     className: 'calcplot-controls'
   });
+
+  // Count sliders and set attribute for multi-column layout
+  const sliderCount = Object.values(data.params).filter((param) => param.type === 'slider').length;
+  if (sliderCount >= 5) {
+    controlsDiv.setAttribute('data-sliders-count', sliderCount.toString());
+  }
+
   container.appendChild(controlsDiv);
+
+  // Initialize dynamic margins based on container size
+  const updateMargins = () => {
+    updateDynamicMargins(container, viewManager);
+  };
+
+  // Initial margin update
+  updateMargins();
+
+  // Set up ResizeObserver to update margins on container resize
+  if (typeof ResizeObserver !== 'undefined') {
+    const resizeObserver = new ResizeObserver(() => {
+      updateMargins();
+    });
+    resizeObserver.observe(container);
+  }
 
   // Initialize values from defaults
   Object.entries(data.params).forEach(([key, param]) => {
@@ -129,7 +112,7 @@ export function createControls(
           }
         });
       } else {
-        options?.log?.('createSlider not available');
+        console.warn('createSlider not available');
       }
     } else if (param.type === 'checkbox') {
       const createCheckbox = (window as any).CalcPlotComponents?.createCheckbox;
@@ -147,7 +130,7 @@ export function createControls(
           }
         });
       } else {
-        options?.log?.('createCheckbox not available');
+        console.warn('createCheckbox not available');
       }
     }
   });
@@ -156,7 +139,7 @@ export function createControls(
 // Get current parameter values from controls
 export function getParameters(data: RuntimeExploreData): Record<string, number | boolean> {
   const params: Record<string, number | boolean> = {};
-  
+
   Object.entries(data.params).forEach(([key, param]: [string, RuntimeControl]) => {
     if (param.type === 'slider') {
       const sliderParam = param as RuntimeSliderControl;
@@ -166,6 +149,6 @@ export function getParameters(data: RuntimeExploreData): Record<string, number |
       params[key] = checkboxParam.value !== undefined ? checkboxParam.value : checkboxParam.default;
     }
   });
-  
+
   return params;
 }

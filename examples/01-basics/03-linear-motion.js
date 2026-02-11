@@ -35,6 +35,7 @@ show(trajectory, view()
     xLabel: 'Time', 
     yLabel: 'Value'
   })
+  .grid()
   .title('Linear Motion: Constant Velocity')
 );
 

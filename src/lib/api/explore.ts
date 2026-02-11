@@ -10,26 +10,27 @@ import { displayHTML } from '../utils/displayHTML';
 import { loadClientBundle } from '../utils/bundleLoader';
 import { ViewBuilder } from '../builders/ViewBuilder';
 import { Control } from '../controls';
+import { DEFAULT_CONFIG } from '../config/defaults';
 
 export interface ExploreConfig {
   /** Interactive parameter controls (sliders, checkboxes) */
   params?: Record<string, Control>;
   /** Initial state or function to compute initial state from parameters */
   initial?: State | ((params?: Params) => State);
-  /** Time range for simulation [start, end] (default: [0, 10]) */
+  /** Time range for simulation [start, end] */
   timeRange?: [number, number];
-  /** Time step for numerical integration (default: 0.01) */
+  /** Time step for numerical integration */
   timeStep?: number;
   /** Visualization configuration - single view or array of views */
   view: ViewBuilder | ViewBuilder[];
 }
 
 export interface ExploreOptions {
-  /** Container width (default: 'auto') */
+  /** Container width */
   width?: number | string;
-  /** Container height in pixels (default: 480) */
+  /** Container height in pixels */
   height?: number | string;
-  /** Target element or ID for rendering (default: creates new element) */
+  /** Target element or ID for rendering */
   target?: string | HTMLElement;
 }
 
@@ -60,8 +61,8 @@ export async function explore(
   config: ExploreConfig,
   options: ExploreOptions = {}
 ): Promise<void> {
-  const { params = {}, initial, timeRange = [0, 10], timeStep = 0.01, view: viewFn } = config;
-  const { width = 'auto', height = 480, target } = options;
+  const { params = {}, initial, timeRange, timeStep, view: viewFn } = config;
+  const { width, height, target } = options;
 
   // Handle single or multiple view functions
   const viewFunctions = Array.isArray(viewFn) ? viewFn : [viewFn];
