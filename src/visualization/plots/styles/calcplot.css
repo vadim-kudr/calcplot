@@ -73,27 +73,11 @@
   flex-shrink: 0;
 }
 
-/* Grid layout based on container width - simplified for single column controls */
-/* @container (max-width: 899px) {
-  .calcplot-controls {
-    margin: var(--controls-margin-top) var(--controls-margin-right) var(--controls-margin-bottom) var(--controls-margin-left);
-  }
-}
-
-@container (min-width: 900px) and (max-width: 1199px) {
-  .calcplot-controls {
-    margin: var(--controls-margin-top) var(--controls-margin-right) var(--controls-margin-bottom) var(--controls-margin-left);
-  }
-}
-
-@container (min-width: 1200px) {
-  .calcplot-controls {
-    margin: var(--controls-margin-top) var(--controls-margin-right) var(--controls-margin-bottom) var(--controls-margin-left);
-  }
-} */
-
 /* Mobile responsive styles */
 @media (max-width: var(--calcplot-mobile-breakpoint)) {
+  .calcplot-explore-grid {
+    max-width: none;
+  }
   .calcplot-controls {
     margin: 8px;
     gap: 4px;

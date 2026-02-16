@@ -11,6 +11,8 @@ export interface SimulateConfig {
   timeRange: [number, number];
   /** Time step for numerical integration (default: 0.01) */
   timeStep?: number;
+  /** Parameter values to override model defaults */
+  params?: Params;
 }
 
 export class SimulationBuilder {
@@ -92,7 +94,8 @@ function simulate(model: Model): SimulationBuilder;
 // eslint-disable-next-line no-redeclare
 function simulate(model: Model, config?: SimulateConfig): Timeline | SimulationBuilder {
   if (config) {    
-    const { times, states } = solve(model, model.state, model.params, config);
+    const params = { ...model.params, ...config.params };
+    const { times, states } = solve(model, model.state, params, config);
     
     return new Timeline(times, states);
   } else {

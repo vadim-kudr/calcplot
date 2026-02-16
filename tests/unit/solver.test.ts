@@ -256,4 +256,106 @@ describe('Unit: Core Solver', () => {
       console.log(`🎯 No duplicate times in ${times.length} entries`);
     });
   });
+
+    describe('⚡ Event Lifecycle & Precision', () => {
+    
+    test('Scenario: Double entries at event time (Touch & Response)', () => {
+      // Check logic: at event time should be exactly two frames with same time 
+      const model = defineIVP({
+        state: { x: 0 },
+        params: { v: 10 },
+        derivatives: { x: (s: State, p: Params) => p.v },
+        events: {
+          wall: {
+            when: (s: State) => 5 - s.x,
+            then: (s: State) => ({ ...s, x: -1 }), // Sharp jump
+          }
+        }
+      });
+
+      const result = solve(model, { x: 0 }, { v: 10 }, { timeRange: [0, 1], timeStep: 0.15 });
+      
+      // Find event time (x=5 at v=10 is t=0.5)
+      const eventTime = 0.5;
+      const indices = result.times.map((t, i) => Math.abs(t - eventTime) < 1e-6 ? i : -1).filter(i => i !== -1);
+      
+      // Should be two points: one before 'then' (x=5), second after (x=-1) 
+      expect(indices).toHaveLength(2);
+      expect(result.states.x[indices[0]]).toBeCloseTo(5, 5);
+      expect(result.states.x[indices[1]]).toBe(-1);
+    });
+
+    test('Scenario: Zeno Effect / Cooldown prevent infinite loops', () => {
+      // Check: EPSILON-cooldown prevents infinite loops when 'when' condition is near zero 
+      const model = defineIVP({
+        state: { y: 0.0000000001, v: 0 },
+        params: {},
+        derivatives: { y: () => -1, v: () => 0 }, // Constantly pulls down
+        events: {
+          floor: {
+            when: (s: State) => s.y,
+            then: (s: State) => ({ ...s, y: 0.0000000001 }) // "Sticking" to floor
+          }
+        }
+      });
+
+      // If cooldown doesn't work, simulation will hang or create million points
+      const result = solve(model, { y: 0.0000000001, v: 0 }, {}, { timeRange: [0, 1], timeStep: 0.1 });
+      
+      expect(result.times.length).toBeLessThan(100); 
+      expect(result.times[result.times.length - 1]).toBeCloseTo(1, 1);
+    });
+
+    test('Scenario: Event removal without stopping simulation', () => {
+      // Check: if one event returns null, it's removed, but others work 
+      let secondEventTriggered = false;
+      const model = defineIVP({
+        state: { x: 0 },
+        params: {},
+        derivatives: { x: () => 1 },
+        events: {
+          remover: {
+            when: (s: State) => 2 - s.x,
+            then: () => null, // Removes itself 
+            once: true
+          },
+          checker: {
+            when: (s: State) => 5 - s.x,
+            then: (s: State) => { 
+              secondEventTriggered = true; 
+              return s; 
+            }
+          }
+        }
+      });
+
+      const result = solve(model, { x: 0 }, {}, { timeRange: [0, 10], timeStep: 1.5 });
+      
+      expect(result.states.x[result.states.x.length - 1]).toBeCloseTo(10, 0);
+      expect(secondEventTriggered).toBe(true);
+    });
+  });
+
+  describe(' RK4 Mathematical Limits', () => {
+    test('Scenario: Oscillation conservation (Pendulum-like)', () => {
+      // Check RK4 accuracy on harmonic oscillator 
+      const model = defineIVP({
+        state: { x: 1, v: 0 },
+        params: { k: 1 },
+        derivatives: {
+          x: (s: State) => s.v,
+          v: (s: State, p: Params) => -p.k * s.x
+        }
+      });
+
+      const result = solve(model, { x: 1, v: 0 }, { k: 1 }, { timeRange: [0, 2 * Math.PI], timeStep: 0.01 });
+
+      const finalX = result.states.x[result.states.x.length - 1];
+      const finalV = result.states.v[result.states.v.length - 1];
+
+      // After one period x should return to ~1, v to ~0 
+      expect(finalX).toBeCloseTo(1, 3);
+      expect(finalV).toBeCloseTo(0, 3);
+    });
+  });
 });

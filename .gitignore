@@ -7,6 +7,11 @@ dist/
 build/
 *.tsbuildinfo
 
+# Documentation cache
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+docs/examples
+
 # Environment variables
 .env
 .env.local

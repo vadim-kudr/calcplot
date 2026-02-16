@@ -6,10 +6,9 @@
 import type { Timeline } from '../../core/types';
 import type { CompareDescriptor } from '../types';
 import type { Layer } from '../../visualization/plots/interfaces';
-import { renderToHTML } from '../utils/renderToHTML';
-import { displayHTML } from '../utils/displayHTML';
-import { loadClientBundle } from '../utils/bundleLoader';
+import { render } from '../rendering';
 import { ViewBuilder } from '../builders/ViewBuilder';
+import { getTargetWithFallback } from './defaultTarget';
 
 export interface CompareConfig {
   /** Labeled timelines for comparison */
@@ -63,11 +62,8 @@ export async function compare(
   // Create compare descriptor
   const descriptor = createCompareDescriptor(combinedTimeline, viewBuilder, options);
 
-  const clientBundle = await loadClientBundle();
-  const html = renderToHTML(descriptor, clientBundle);
-
-  // Use unified displayHTML function
-  await displayHTML(html, options.target);
+  const finalTarget = getTargetWithFallback(options.target);
+  await render(descriptor, { width: options.width, height: options.height, target: finalTarget });
 }
 
 /**
@@ -111,7 +107,7 @@ function createCombinedTimeline(timelines: CompareConfig): CombinedTimeline {
 
     // Prefix state keys with label to avoid conflicts
     for (const [key, values] of Object.entries(timeline.states)) {
-      combinedTimeline.states[`${label}_${key}`] = values;
+      combinedTimeline.states[`${label.replace(/\s/g, '_')}_${key}`] = values;
     }
   }
 

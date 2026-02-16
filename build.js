@@ -1,249 +1,104 @@
 #!/usr/bin/env node
-
 import * as esbuild from 'esbuild';
+import { execSync } from 'child_process';
 import * as fs from 'fs';
-import * as path from 'path';
-import http from 'http';
-import { ExampleBuilder } from './build-examples.js';
 
 const args = process.argv.slice(2);
-const isWatch = args.includes('--watch') || !args.includes('--no-watch');
-const isVerbose = args.includes('--verbose');
-const isServe = args.includes('--serve');
-const isExamplesOnly = args.includes('--examples-only');
-const port = args.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8080';
-const filterPattern = args.find(arg => arg.startsWith('--filter='))?.split('=')[1];
+const isWatch = args.includes('--watch');
 
-if (args.includes('--help') || args.includes('-h')) {
-  console.log(`🚀 CalcPlot Build
+// ---------- Build Targets ----------
+const BUILD_TARGETS = [
+  {
+    entryPoints: ['src/lib/index.ts'],
+    outfile: 'dist/calcplot.js',
+    format: 'iife',
+    globalName: 'CalcPlot'
+  },
+  {
+    entryPoints: ['src/client/client-bundle.ts'],
+    outfile: 'dist/calcplot-client.js',
+    format: 'iife',
+    globalName: 'CalcPlotClient'
+  },
+  {
+    entryPoints: ['src/client/client-bundle.ts'],
+    outfile: 'dist/calcplot-client-deno.js',
+    format: 'esm',
+    platform: 'neutral',
+    external: ['fs', 'path', 'url'], // Exclude Node.js dependencies
+  },
+  {
+    entryPoints: ['src/lib/index.ts'],
+    outfile: 'dist/index.js',
+    format: 'esm',
+    platform: 'neutral'
+  }
+];
 
-Usage: node build.js [options]
-
-Options:
-  --watch         Watch mode (default)
-  --no-watch      Disable watch mode
-  --serve         Start server after build
-  --examples-only Build examples only
-  --port=N        Server port (default: 8080)
-  --filter=PATTERN Filter examples by regex pattern (relative path)
-  --verbose       Detailed output
-  --help          Show help
-
-Examples:
-  node build.js --examples-only --filter="01-interactive-oscillator"
-  node build.js --examples-only --filter="04-interactive.*"
-  node build.js --examples-only --filter=".*-oscillator.*"
-  node build.js --examples-only --serve --filter="01-basics"`);
-  process.exit(0);
-}
-
-// Build configs
-const configs = [
-  { entryPoints: ['src/lib/index.ts'], outfile: './dist/calcplot.js', format: 'iife', globalName: 'CalcPlot' },
-  { entryPoints: ['src/client/client-bundle.ts'], outfile: './dist/calcplot-client.js', format: 'iife', globalName: 'CalcPlotClient' },
-  { entryPoints: ['src/client/client-bundle.ts'], outfile: './dist/calcplot-client-deno.js', format: 'esm', platform: 'neutral' },
-  { entryPoints: ['src/lib/index.ts'], outfile: './dist/index.js', format: 'esm', platform: 'neutral' }
-].map(config => ({
-  ...config,
+// ---------- Base Config ----------
+const baseConfig = {
   bundle: true,
+  sourcemap: isWatch,
   minify: !isWatch,
   target: 'es2020',
-  external: ['fs', 'path', 'crypto', 'os', 'util'],
-  sourcemap: isWatch,
-  loader: {
-    '.css': 'text'
-  }
-}));
+  loader: { '.css': 'text' }
+};
 
-// Server function
-function startServer(port = '8080') {
-  const mimeTypes = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.wav': 'audio/wav',
-    '.mp4': 'video/mp4',
-    '.woff': 'application/font-woff',
-    '.ttf': 'application/font-ttf',
-    '.eot': 'application/vnd.ms-fontobject',
-    '.otf': 'application/font-otf',
-    '.wasm': 'application/wasm'
-  };
-
-  const server = http.createServer((req, res) => {
-    if (isVerbose) console.log(`${req.method} ${req.url}`);
-
-    let filePath = req.url === '/' ? '/examples.html' : req.url;
-    filePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-    
-    if (filePath.startsWith('/dist')) {
-      filePath = filePath.substring(5);
-    }
-    
-    const fullPath = path.join(process.cwd(), 'dist', filePath);
-    
-    fs.access(fullPath, fs.constants.F_OK, (err) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.end(`
-          <h1>404 - File Not Found</h1>
-          <p>The file ${filePath} was not found.</p>
-          <p><a href="/">Go to Examples</a></p>
-        `);
-        return;
-      }
-
-      const ext = path.parse(fullPath).ext;
-      const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-      fs.readFile(fullPath, (err, data) => {
-        if (err) {
-          res.writeHead(500, { 'Content-Type': 'text/html' });
-          res.end('<h1>500 - Internal Server Error</h1>');
-          return;
-        }
-
-        res.writeHead(200, { 'Content-Type': contentType });
-        res.end(data);
-      });
-    });
-  });
-
-  server.listen(port, () => {
-    console.log(`🚀 Server running at http://localhost:${port}`);
-    console.log(`📁 Serving from: ${path.join(process.cwd(), 'dist')}`);
-    console.log(`⏹️  Press Ctrl+C to stop`);
-  });
-
-  
-  return server;
-}
-
-function copyCSSFile() {
-  const cssSource = './src/visualization/plots/styles/calcplot.css';
-  const cssDest = './dist/calcplot-client.css';
-  if (fs.existsSync(cssSource)) {
-    fs.copyFileSync(cssSource, cssDest);
-    if (isVerbose) console.log(`  → ${cssSource} → ${cssDest}`);
-  } else {
-    console.warn('⚠️  CSS source file not found:', cssSource);
-  }
-}
-
-// Build library function
-async function buildLibrary() {
-  const start = Date.now();
-  const contexts = await Promise.all(configs.map(config => {
-    if (isVerbose) console.log(`  → ${config.entryPoints[0]} → ${config.outfile}`);
-    return esbuild.context(config);
-  }));
-
-  copyCSSFile();
-
-  if (isWatch) {
-    console.log('👀 Watching library... (Ctrl+C to stop)');
-    await Promise.all(contexts.map(ctx => ctx.watch()));
-    return contexts;
-  } else {
-    await Promise.all(contexts.map(ctx => ctx.rebuild()));
-    console.log(`✅ Library built in ${((Date.now() - start) / 1000).toFixed(2)}s`);
-    console.log('📦 Files:', configs.map(c => c.outfile).join(', '));
-    return contexts;
-  }
-}
-
-// Build examples bundle function
-async function buildExamplesBundle() {
-  copyCSSFile();
-  
-  // Build examples
-  const exampleBuilder = new ExampleBuilder();
-  
-  // Set filter if specified
-  if (filterPattern) {
-    exampleBuilder.setFilter(filterPattern);
-  }
-  
-  await exampleBuilder.build();
-}
-
-// Build function
+// ---------- Build ----------
 async function build() {
-  if (!fs.existsSync('./dist')) fs.mkdirSync('./dist', { recursive: true });
-  
-  // Build examples bundle
-  if (isExamplesOnly) {
-    await buildExamplesBundle();
-    
-    // Start server if serving
-    if (isServe) {
-      const server = startServer(port);
-      
-      // Handle cleanup for server
-      if (!process.listeners('SIGINT').length) {
-        process.on('SIGINT', () => {
-          console.log('\n👋 Shutting down...');
-          server.close(() => {
-            console.log('✅ Server stopped');
-            process.exit(0);
-          });
-        });
-      }
-    }
-    return;
+  console.log('🚀 Building library...');
+
+  // Generate TypeScript declaration files
+  console.log('📝 Generating type declarations...');
+  try {
+    execSync('tsc --project tsconfig.types.json', { stdio: 'inherit' });
+  } catch (error) {
+    console.error('❌ Type generation failed:', error);
+    process.exit(1);
   }
-  
-  // Build library
-  let contexts;
+
   if (isWatch) {
-    contexts = await buildLibrary();
+    // Watch mode
+    const contexts = await Promise.all(
+      BUILD_TARGETS.map((target) =>
+        esbuild.context({
+          ...baseConfig,
+          ...target,
+          plugins: [{
+            name: 'build-log',
+            setup(build) {
+              build.onEnd(() => {
+                console.log(`✅ ${build.initialOptions.outfile}`);
+              });
+            }
+          }]
+        })
+      )
+    );
+
+    await Promise.all(contexts.map((ctx) => ctx.watch()));
+    console.log('👀 Watching for changes...');
+
+    process.on('SIGINT', () => {
+      console.log('\n👋 Stopping...');
+      contexts.forEach((ctx) => ctx.dispose());
+      process.exit();
+    });
   } else {
-    contexts = await buildLibrary();
-    await Promise.all(contexts.map(ctx => ctx.dispose()));
-  }
-  
-  // Build examples
-  const exampleBuilder = new ExampleBuilder();
-  
-  // Set filter if specified
-  if (filterPattern) {
-    exampleBuilder.setFilter(filterPattern);
-  }
-  
-  await exampleBuilder.build();
-  
-  if (isServe) {
-    const server = startServer(port);
+    // One-time build
+    await Promise.all(
+      BUILD_TARGETS.map((target) => 
+        esbuild.build({ ...baseConfig, ...target })
+      )
+    );
     
-    // Handle cleanup for both server and esbuild contexts (only once)
-    if (!process.listeners('SIGINT').length) {
-      process.on('SIGINT', () => {
-        console.log('\n👋 Shutting down...');
-        server.close(() => {
-          console.log('✅ Server stopped');
-          // Clean up esbuild contexts
-          if (contexts.length > 0) {
-            Promise.all(contexts.map(ctx => ctx.dispose())).then(() => {
-              console.log('✅ Build contexts cleaned up');
-              process.exit(0);
-            });
-          } else {
-            process.exit(0);
-          }
-        });
-      });
-    }
-  } else if (!isWatch) {
-    console.log(`🎉 Build complete! Open dist/examples.html in your browser.`);
+    console.log('✅ Build complete!');
+    console.log('\nOutputs:');
+    BUILD_TARGETS.forEach(t => console.log(`  - ${t.outfile}`));
   }
 }
 
-build().catch(err => {
-  console.error('❌ Build failed:', err);
+build().catch((error) => {
+  console.error('❌ Build failed:', error);
   process.exit(1);
 });

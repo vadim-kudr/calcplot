@@ -4,10 +4,9 @@
  */
 
 import { Timeline } from '../../core/types';
-import { renderToHTML } from '../utils/renderToHTML';
-import { displayHTML } from '../utils/displayHTML';
-import { loadClientBundle } from '../utils/bundleLoader';
+import { render } from '../rendering';
 import { ViewBuilder } from '../builders/ViewBuilder';
+import { getTargetWithFallback } from './defaultTarget';
 
 export interface ShowOptions {
   /** Container width */
@@ -68,7 +67,6 @@ export async function show(
     height: options.height
   };
 
-  const clientBundle = await loadClientBundle();
-  const html = renderToHTML(descriptor, clientBundle);
-  await displayHTML(html, options.target);
+  const finalTarget = getTargetWithFallback(options.target);
+  await render(descriptor, { width: options.width, height: options.height, target: finalTarget });
 }

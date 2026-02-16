@@ -23,8 +23,8 @@ deno add calcplot
 ## Quick Start
 
 For detailed documentation, see:
-- **[Quick Start.md](Quick%20Start.md)** - Get started in 5 minutes
-- **[API.md](API.md)** - Complete API reference
+- **[Quick Start.md](docs/quick-start.md)** - Get started in 5 minutes
+- **[API.md](docs/API.md)** - Complete API reference
 
 ### Basic Example
 ```typescript

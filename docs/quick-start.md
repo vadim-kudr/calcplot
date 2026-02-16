@@ -7,7 +7,7 @@ CalcPlot is a library for interactive mathematical visualization. Get started in
 ### 1. Define a Model
 
 ```javascript
-import { defineIVP, explore, view, slider } from './index.js';
+import { defineIVP, explore, view, slider } from 'calcplot';
 
 // Harmonic oscillator model
 const oscillator = defineIVP({

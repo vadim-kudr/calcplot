@@ -11,6 +11,7 @@ export { Timeline } from '../core/timeline';
 export { compare } from './api/compare';
 export { explore } from './api/explore';
 export { show } from './api/show';
+export { setDefaultTarget, getDefaultTarget, clearDefaultTarget, getTargetWithFallback } from './api/defaultTarget';
 
 // Simple API exports 
 export { axis, canvas, grid, plot, scene } from './builders/SimpleViewBuilder';

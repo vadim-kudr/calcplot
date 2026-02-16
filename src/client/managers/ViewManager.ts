@@ -242,7 +242,6 @@ export class ViewManager {
     // Get margins from first renderer (they should all have the same margins)
     const firstRenderer = this.renderers[0];
     // Use the public getter to access SVGManager
-    console.log(firstRenderer?.getSVGManager().getDimensions()?.margins);
     return firstRenderer?.getSVGManager().getDimensions()?.margins;
   }
 

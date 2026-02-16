@@ -1,15 +1,12 @@
 {
   "name": "calcplot",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "type": "module",
   "description": "CalcPlot - Interactive calculation and plotting library for mathematical visualization",
-  "main": "dist/lib/index.js",
+  "main": "dist/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
-    "build": "node build.js --no-watch",
-    "dev": "node build.js --serve",
-    "build:examples": "node build.js --examples-only --no-watch",
-    "dev:examples": "node build.js --examples-only --serve",
+    "build": "node build.js",
     "test": "vitest --no-watch",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
@@ -18,7 +15,11 @@
     "lint:fix": "eslint src/**/*.ts tests/**/*.ts --fix",
     "format": "prettier --write examples/**/*.js examples/**/*.md src/**/*.ts tests/**/*.ts",
     "format:check": "prettier --check examples/**/*.js examples/**/*.md src/**/*.ts tests/**/*.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "dev": "npm run docs:dev"
   },
   "keywords": [
     "calcplot",
@@ -42,7 +43,6 @@
   "license": "MIT",
   "devDependencies": {
     "@types/d3": "^7.4.3",
-    "@types/handlebars": "^4.0.40",
     "@types/jsdom": "^27.0.0",
     "@types/node": "^20.0.0",
     "@types/prismjs": "^1.26.5",
@@ -53,14 +53,15 @@
     "d3": "^7.8.5",
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
-    "eslint-plugin-riot": "^0.1.8",
     "jsdom": "^27.4.0",
     "marked": "^12.0.0",
     "prettier": "^3.2.5",
     "prismjs": "^1.29.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0",
-    "vitest": "^4.0.18"
+    "vitepress": "^1.6.4",
+    "vitest": "^4.0.18",
+    "vue": "^3.5.28"
   },
   "files": [
     "dist/**/*",
@@ -68,6 +69,5 @@
     "LICENSE"
   ],
   "dependencies": {
-    "handlebars": "^4.7.8"
   }
 }

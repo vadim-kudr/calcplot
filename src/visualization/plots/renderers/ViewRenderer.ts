@@ -27,8 +27,7 @@ export interface VisualizationData {
 }
 
 export class ViewRenderer {
-  private static isCalcplotStylesLoading = false;
-  private static isCalcplotStylesLoaded = false;
+  private static cssLoadPromise: Promise<void> | null = null;
   private static readonly renderOrder = [
     'title',
     'axis',
@@ -70,37 +69,27 @@ export class ViewRenderer {
       this.container.classList.add('calcplot-style', 'calcplot-view');
     }
 
-    // Check if styles are already loaded or loading
-    if (ViewRenderer.isCalcplotStylesLoaded || ViewRenderer.isCalcplotStylesLoading) {
-      return;
+    // Load styles if not already loading
+    if (!ViewRenderer.cssLoadPromise) {
+      ViewRenderer.cssLoadPromise = ViewRenderer.loadStyles();
     }
+  }
 
-    // Set loading flag
-    ViewRenderer.isCalcplotStylesLoading = true;
-
-    // Import CSS dynamically from dist path
-    fetch('/dist/calcplot-client.css')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load CSS: ${response.status}`);
-        }
-        return response.text();
-      })
-      .then((cssText) => {
-        // Create style element and inject CSS
-        const style = document.createElement('style');
-        style.id = 'calcplot-styles';
-        style.textContent = cssText;
-        document.head.appendChild(style);
-
-        // Set loaded flag
-        ViewRenderer.isCalcplotStylesLoaded = true;
-        ViewRenderer.isCalcplotStylesLoading = false;
-      })
-      .catch((error) => {
-        console.warn('Failed to load calcplot styles:', error);
-        ViewRenderer.isCalcplotStylesLoading = false;
-      });
+  private static async loadStyles(): Promise<void> {
+    try {
+      // @ts-ignore - TypeScript doesn't understand ?raw imports
+      const cssModule = await import('../styles/calcplot.css?raw');
+      
+      // Create style element and inject CSS
+      const style = document.createElement('style');
+      style.id = 'calcplot-styles';
+      const cssText = typeof cssModule === 'string' ? cssModule : cssModule.default || '';
+      
+      style.textContent = cssText;
+      document.head.appendChild(style);
+    } catch (error) {
+      console.warn('Failed to load calcplot styles:', error);
+    }
   }
 
   /**

@@ -1,470 +1,474 @@
 /**
  * Unit tests for runtime/serialization.ts
- * Documentation-style tests for function parsing and model serialization
+ * Comprehensive tests for function parsing and model serialization
  */
 
-import { describe, test, expect, vi } from 'vitest';
-import {
+import { describe, test, expect } from 'vitest';
+import { 
   FunctionSerializer,
   serializeModel,
   serializeParams,
   serializeTimeline,
   deserializeParams,
-  deserializeFunctions,
   deserializeEvents,
+  deserializeFunctions,
+  serializeFunctions,
   serializeEvents
 } from '../../src/simulation/serialization';
 
-describe('FunctionSerializer - Parsing Different Function Formats', () => {
-  test.each([
-    {
-      name: 'arrow function with block body',
-      input: '(state) => { return state.x; }',
-      expected: 'return state.x;'
-    },
-    {
-      name: 'simple arrow function with block body',
-      input: 's => { return s.vx * 2; }',
-      expected: 'return s.vx * 2;'
-    },
-    {
-      name: 'arrow function with expression body',
-      input: '(state) => state.y',
-      expected: 'return state.y'
-    },
-    {
-      name: 'simple arrow function with expression',
-      input: 'x => x * 2',
-      expected: 'return x * 2'
-    },
-    {
-      name: 'regular function declaration',
-      input: 'function(state, params) { return params.k * state.x; }',
-      expected: 'return params.k * state.x;'
-    }
-  ])('parses $name', ({ input, expected }) => {
-    // When: parsing
-    const result = FunctionSerializer.parseFunction(input);
-
-    // Then: should extract body
-    expect(result).toBe(expected);
+describe('FunctionSerializer', () => {
+  describe('parseFunction - Arrow functions', () => {
+    test.each([
+      // [input, expected, description]
+      ['(state) => { return state.x; }', 'return state.x;', 'arrow with block body'],
+      ['(state) => state.y', 'return state.y', 'arrow with expression body'],
+      ['x => x * 2', 'return x * 2', 'simple arrow without parens'],
+      ['x => { return x * 2; }', 'return x * 2;', 'simple arrow with block'],
+      ['(a, b) => a + b', 'return a + b', 'arrow with multiple params'],
+      ['(s) => { const x = s.x; return x * 2; }', 'const x = s.x; return x * 2;', 'arrow with multi-line body'],
+      ['() => 42', 'return 42', 'arrow with no params'],
+      ['(state) => { return state.x + state.y; }', 'return state.x + state.y;', 'arrow with complex expression'],
+    ])('%s -> %s (%s)', (input, expected) => {
+      const result = FunctionSerializer.parseFunction(input);
+      expect(result).toBe(expected);
+    });
   });
 
-  test.each([
-    {
-      name: 'function with extra spaces',
-      input: '  ( state )  =>  {  return  state.x  ;  }  ',
-      expected: 'return  state.x  ;'
-    },
-    {
-      name: 'function with newlines',
-      input: `(state) => {
-        return state.x;
-      }`,
-      expected: 'return state.x;'
-    },
-    {
-      name: 'compact arrow with spaces',
-      input: '  x => x * 2  ',
-      expected: 'return x * 2'
-    },
-    {
-      name: 'regular function with formatting',
-      input: 'function ( state ) { return state.x; }',
-      expected: 'return state.x;'
-    }
-  ])('handles whitespace and formatting in $name', ({ input, expected }) => {
-    // When: parsing
-    const result = FunctionSerializer.parseFunction(input);
-
-    // Then: should handle whitespace correctly
-    expect(result).toBe(expected);
+  describe('parseFunction - Regular functions', () => {
+    test.each([
+      ['function(state, params) { return params.k * state.x; }', 'return params.k * state.x;', 'regular function'],
+      ['function() { return 42; }', 'return 42;', 'function with no params'],
+      ['function(x) { const y = x * 2; return y; }', 'const y = x * 2; return y;', 'function with multi-line'],
+    ])('%s -> %s (%s)', (input, expected) => {
+      const result = FunctionSerializer.parseFunction(input);
+      expect(result).toBe(expected);
+    });
   });
 
-  test('handles complex function with multiple statements', () => {
-    // Given: multi-line function
-    const fnStr = `(state) => {
-      const temp = state.x * state.y;
-      return Math.sqrt(temp);
-    }`;
+  describe('parseFunction - Edge cases', () => {
+    test('handles invalid function input', () => {
+      const result = FunctionSerializer.parseFunction('not a function');
+      expect(result).toBe('not a function');
+    });
 
-    // When: parsing
-    const result = FunctionSerializer.parseFunction(fnStr);
+    test('handles empty arrow function', () => {
+      const result = FunctionSerializer.parseFunction('() => {}');
+      expect(result).toBe('');
+    });
 
-    // Then: should preserve all statements
-    expect(result).toContain('const temp = state.x * state.y;');
-    expect(result).toContain('return Math.sqrt(temp);');
+    test('handles function with newlines and spacing', () => {
+      const input = `(state) => {
+        const x = state.x;
+        return x * 2;
+      }`;
+      const result = FunctionSerializer.parseFunction(input);
+      expect(result).toContain('const x = state.x;');
+      expect(result).toContain('return x * 2;');
+    });
+
+    test('handles function with complex object return', () => {
+      const input = '(s) => { return { x: s.x, y: s.y }; }';
+      const result = FunctionSerializer.parseFunction(input);
+      expect(result).toBe('return { x: s.x, y: s.y };');
+    });
+
+    test('handles whitespace-only input', () => {
+      const result = FunctionSerializer.parseFunction('   ');
+      expect(result).toBe('');
+    });
   });
 
-  test('createFunction from parsed body', () => {
-    // Given: parsed function body and parameters
-    const params = ['state', 'params'];
-    const body = 'return params.k * state.x;';
+  describe('parseAndCreateFunction', () => {
+    test('creates executable function from arrow expression', () => {
+      const fn = FunctionSerializer.parseAndCreateFunction(['state'], '(state) => state.x * 2');
+      expect(fn({ x: 5 })).toBe(10);
+    });
 
-    // When: creating function
-    const fn = FunctionSerializer.createFunction(params, body);
+    test('creates executable function from arrow block', () => {
+      const fn = FunctionSerializer.parseAndCreateFunction(
+        ['state'], 
+        '(state) => { return state.x * 2; }'
+      );
+      expect(fn({ x: 5 })).toBe(10);
+    });
 
-    // Then: should create working function
-    expect(typeof fn).toBe('function');
-    expect(fn({ x: 2.0 }, { k: 3.0 })).toBe(6.0);
-  });
+    test('creates function with multiple parameters', () => {
+      const fn = FunctionSerializer.parseAndCreateFunction(
+        ['a', 'b'], 
+        '(a, b) => a + b'
+      );
+      expect(fn(3, 4)).toBe(7);
+    });
 
-  test('parseAndCreateFunction in one step', () => {
-    // Given: function string
-    const fnStr = '(a, b) => a + b';
+    test('creates function with complex logic', () => {
+      const fn = FunctionSerializer.parseAndCreateFunction(
+        ['state', 'params'],
+        '(state, params) => { const k = params.k; return state.x * k; }'
+      );
+      expect(fn({ x: 5 }, { k: 2 })).toBe(10);
+    });
 
-    // When: parsing and creating
-    const fn = FunctionSerializer.parseAndCreateFunction(['a', 'b'], fnStr);
-
-    // Then: should create working function
-    expect(fn(2, 3)).toBe(5);
-  });
-});
-
-describe('FunctionSerializer - Parameter Auto-Detection', () => {
-  test('detects functions with parameters', () => {
-    // Given: function that uses parameters
-    const selectorWithParams = '(s, p) => s.x * p.amplitude';
-    
-    // When: creating with params
-    const fnWithParams = FunctionSerializer.parseAndCreateFunction(['s', 'p'], selectorWithParams);
-    
-    // Then: should work with parameters
-    expect(fnWithParams({ x: 2 }, { amplitude: 3 })).toBe(6);
-  });
-
-  test('detects functions without parameters', () => {
-    // Given: function that doesn't use parameters
-    const selectorWithoutParams = '(s) => s.x * 2';
-    
-    // When: creating without params
-    const fnWithoutParams = FunctionSerializer.parseAndCreateFunction(['s'], selectorWithoutParams);
-    
-    // Then: should work without parameters
-    expect(fnWithoutParams({ x: 2 })).toBe(4);
-  });
-
-  test('handles fallback from params to no-params', () => {
-    // Given: function defined without params
-    const selector = '(s) => s.x';
-    
-    // When: trying to create with params (creates function but p will be undefined)
-    const fnWithParams = FunctionSerializer.parseAndCreateFunction(['s', 'p'], selector);
-    
-    // Then: should work but ignore extra parameter
-    expect(fnWithParams({ x: 5 }, { amplitude: 3 })).toBe(5); // p is undefined/ignored
-    
-    // When: creating correctly without params
-    const fn = FunctionSerializer.parseAndCreateFunction(['s'], selector);
-    
-    // Then: should work without params
-    expect(fn({ x: 5 })).toBe(5);
-  });
-
-  test('handles parametric plot detection with params', () => {
-    // Given: parametric function with params
-    const parametricSelector = '(s, p) => [s.x * p.scale, s.y * p.scale]';
-    
-    // When: creating and testing
-    const fn = FunctionSerializer.parseAndCreateFunction(['s', 'p'], parametricSelector);
-    const result = fn({ x: 1, y: 2 }, { scale: 3 });
-    
-    // Then: should return array for parametric plot
-    expect(Array.isArray(result)).toBe(true);
-    expect(result).toEqual([3, 6]);
+    test('handles function with no return value', () => {
+      const fn = FunctionSerializer.parseAndCreateFunction(
+        ['x'],
+        '(x) => { x * 2; }' // no return statement
+      );
+      expect(fn(5)).toBeUndefined();
+    });
   });
 });
 
 describe('Model Serialization', () => {
-  test('serializes complete model with events', () => {
-    // Given: mathematical model with boundary conditions
+  test('serializes model with derivatives', () => {
     const model = {
-      state: { x: 1.0, v: 0.0 },
-      params: { k: 2.0, damping: 0.1 },
+      state: { x: 0, y: 1 },
+      params: { k: 2 },
       derivatives: {
-        x: (state: any) => state.v,
-        v: (state: any, params: any) => -params.k * state.x - params.damping * state.v
-      },
+        x: (s: any) => s.y,
+        y: (s: any) => -s.x
+      }
+    };
+
+    const serialized = serializeModel(model);
+
+    expect(serialized.state).toEqual({ x: 0, y: 1 });
+    expect(serialized.params).toEqual({ k: 2 });
+    expect(serialized.derivatives.x).toContain('s.y');
+    expect(serialized.derivatives.y).toContain('-s.x');
+  });
+
+  test('serializes model with events', () => {
+    const model = {
+      state: { x: 0 },
+      params: {},
+      derivatives: { x: (s: any) => 1 },
       events: {
-        boundary: {
-          when: (state: any) => Math.abs(state.x) - 5,
-          then: (state: any) => ({ ...state, v: -state.v * 0.8 })
-        }
-      }
-    };
-
-    // When: serializing
-    const serialized = serializeModel(model);
-
-    // Then: functions become strings, data preserved
-    expect(serialized.state).toEqual({ x: 1.0, v: 0.0 });
-    expect(serialized.params).toEqual({ k: 2.0, damping: 0.1 });
-    expect(typeof serialized.derivatives.x).toBe('string');
-    expect(typeof serialized.derivatives.v).toBe('string');
-    expect(serialized.events).toBeDefined();
-    expect(typeof serialized.events!.boundary).toBe('string');
-  });
-
-  test('serializes simple model without events', () => {
-    // Given: exponential growth model
-    const model = {
-      state: { y: 1.0 },
-      params: { rate: 0.1 },
-      derivatives: {
-        y: (state: any, params: any) => params.rate * state.y
-      }
-    };
-
-    // When: serializing
-    const serialized = serializeModel(model);
-
-    // Then: should work without events
-    expect(serialized.state).toEqual({ y: 1.0 });
-    expect(serialized.params).toEqual({ rate: 0.1 });
-    expect(serialized.derivatives).toBeDefined();
-    expect(serialized.events).toBeUndefined();
-  });
-
-  test('serializes slider parameters', () => {
-    // Given: UI controls for simulation
-    const params = {
-      k: { type: 'slider', min: 0.1, max: 5.0, default: 1.0, label: 'Spring Constant', step: 0.1 },
-      damping: { min: 0, max: 1, default: 0.1, step: 0.01 }
-    };
-
-    // When: serializing
-    const serialized = serializeParams(params);
-
-    // Then: should preserve all control properties
-    expect(serialized.k.type).toBe('slider');
-    expect(serialized.k.min).toBe(0.1);
-    expect(serialized.k.max).toBe(5.0);
-    expect(serialized.k.default).toBe(1.0);
-    expect(serialized.k.label).toBe('Spring Constant');
-    expect(serialized.k.step).toBe(0.1);
-  });
-
-  test('serializes timeline data', () => {
-    // Given: simulation results
-    const timeline = {
-      times: [0, 0.1, 0.2, 0.3],
-      states: {
-        x: [0, 1, 2, 3],
-        y: [0, 1, 4, 9],
-        v: [1, 1, 1, 1]
-      },
-      at: vi.fn(),
-      serialize: vi.fn()
-    } as any;
-
-    // When: serializing
-    const serialized = serializeTimeline(timeline);
-
-    // Then: should preserve data structure
-    expect(serialized.times).toEqual([0, 0.1, 0.2, 0.3]);
-    expect(serialized.states.x).toEqual([0, 1, 2, 3]);
-    expect(serialized.states.y).toEqual([0, 1, 4, 9]);
-    expect(serialized.states.v).toEqual([1, 1, 1, 1]);
-  });
-});
-
-describe('Deserialization', () => {
-  test('deserializes parameters to default values', () => {
-    // Given: serialized parameters
-    const serialized = {
-      k: { type: 'slider', min: 0.1, max: 5.0, default: 2.0, label: 'Constant', step: 0.1 },
-      damping: { type: 'slider', min: 0, max: 1, default: 0.2, label: 'Damping', step: 0.01 }
-    };
-
-    // When: deserializing
-    const params = deserializeParams(serialized);
-
-    // Then: should extract default values
-    expect(params).toEqual({ k: 2.0, damping: 0.2 });
-  });
-
-  test('deserializes functions from strings', () => {
-    // Given: serialized functions in different formats
-    const testCases = [
-      {
-        name: 'arrow function',
-        input: '(state) => state.vx',
-        testState: { vx: 5 },
-        expected: 5
-      },
-      {
-        name: 'arrow function with params',
-        input: '(state, params) => -params.k * state.x',
-        testState: { x: 2 },
-        testParams: { k: 3 },
-        expected: -6
-      },
-      {
-        name: 'regular function declaration',
-        input: 'function(state) { return 0.5 * state.v * state.v; }',
-        testState: { v: 4 },
-        expected: 8
-      }
-    ];
-
-    testCases.forEach(({ name, input, testState, testParams, expected }) => {
-      // When: deserializing
-      const functions = deserializeFunctions({ [name]: input });
-
-      // Then: should create working function
-      expect(typeof functions[name]).toBe('function');
-
-      if (testParams) {
-        expect(functions[name](testState, testParams)).toBe(expected);
-      } else {
-        expect(functions[name](testState)).toBe(expected);
-      }
-    });
-  });
-
-  test('handles deserialization errors gracefully', () => {
-    // Given: malformed function string
-    const serialized = {
-      broken: 'invalid function syntax',
-      working: '(x) => x * 2'
-    };
-
-    // When: deserializing
-    const functions = deserializeFunctions(serialized);
-
-    // Then: should provide fallback for broken function
-    expect(typeof functions.broken).toBe('function');
-    expect(functions.broken()).toBe(0); // fallback
-    expect(functions.working(5)).toBe(10); // working function
-  });
-});
-
-describe('Real-world Serialization Examples', () => {
-  test('oscillator model roundtrip', () => {
-    // Given: harmonic oscillator
-    const model = {
-      state: { x: 1.0, v: 0.0 },
-      params: { omega: 1.0, damping: 0.1 },
-      derivatives: {
-        x: (state: any) => state.v,
-        v: (state: any, params: any) =>
-          -params.omega * params.omega * state.x - params.damping * state.v
-      }
-    };
-
-    // When: serialize and deserialize
-    const serialized = serializeModel(model);
-    const functions = deserializeFunctions(serialized.derivatives);
-
-    // Then: should preserve functionality
-    expect(functions.x({ v: 2 })).toBe(2);
-    expect(functions.v({ x: 1, v: 0 }, { omega: 2, damping: 0.1 })).toBeCloseTo(-4.0, 1);
-  });
-
-  test('parameter controls for UI', () => {
-    // Given: interactive controls
-    const controls = {
-      gravity: {
-        type: 'slider',
-        min: 0,
-        max: 20,
-        default: 9.81,
-        label: 'Gravity (m/s²)',
-        step: 0.1
-      },
-      mass: { type: 'slider', min: 0.1, max: 10, default: 1.0, label: 'Mass (kg)', step: 0.1 },
-      airResistance: {
-        type: 'checkbox',
-        min: 0,
-        max: 1,
-        default: 0,
-        label: 'Air Resistance',
-        step: 1
-      }
-    };
-
-    // When: serializing for HTML
-    const serialized = serializeParams(controls);
-
-    // Then: should create proper UI definitions
-    expect(serialized.gravity.label).toBe('Gravity (m/s²)');
-    expect(serialized.gravity.default).toBe(9.81);
-    expect(serialized.airResistance.type).toBe('checkbox');
-  });
-});
-
-describe('Event Serialization', () => {
-  test('should serialize event object with functions', () => {
-    // Given: event with when/then functions
-    const events = {
-      groundHit: {
-        when: (s) => s.y,
-        then: (s, p) => null,
-        once: true
-      }
-    };
-
-    // When: serializing events
-    const serialized = serializeEvents(events);
-
-    // Then: should create JSON string with function strings
-    expect(serialized.groundHit).toContain('when');
-    expect(serialized.groundHit).toContain('then');
-    expect(serialized.groundHit).toContain('once');
-    
-    const parsed = JSON.parse(serialized.groundHit);
-    expect(parsed.when).toBe('(s) => s.y');
-    expect(parsed.then).toBe('(s, p) => null');
-    expect(parsed.once).toBe(true);
-  });
-
-  test('should deserialize event JSON back to functions', () => {
-    // Given: serialized event JSON
-    const serialized = {
-      groundHit: '{"when":"(s)=>s.y","then":"(s, p)=>null","once":true}'
-    };
-
-    // When: deserializing with deserializeEvents
-    const deserialized = deserializeEvents(serialized);
-
-    // Then: should create working event object
-    expect(typeof deserialized.groundHit.when).toBe('function');
-    expect(typeof deserialized.groundHit.then).toBe('function');
-    expect(deserialized.groundHit.once).toBe(true);
-    
-    // Test function execution
-    const testState = { x: 10, y: -5 };
-    expect(deserialized.groundHit.when(testState)).toBe(-5);
-    expect(deserialized.groundHit.then(testState, { g: 9.81 })).toBe(null);
-  });
-
-  test('should handle model with events in serializeModel', () => {
-    // Given: model with events
-    const model = {
-      state: { x: 0, y: 0 },
-      params: { g: 9.81 },
-      derivatives: {
-        x: (s) => s.vx,
-        y: (s) => s.vy
-      },
-      events: {
-        groundHit: {
-          when: (s) => s.y,
-          then: (s, p) => null,
+        stop: {
+          when: (s: any) => s.x > 10,
+          then: (s: any) => ({ ...s, x: 0 }),
           once: true
         }
       }
     };
 
-    // When: serializing model
     const serialized = serializeModel(model);
 
-    // Then: should include serialized events
     expect(serialized.events).toBeDefined();
-    expect(serialized.events.groundHit).toContain('when');
+    expect(serialized.events!.stop).toBeDefined();
     
-    // Check derivative serialization with exact format
-    expect(serialized.derivatives.x).toBe('(s) => s.vx');
-    expect(serialized.derivatives.y).toBe('(s) => s.vy');
+    const eventObj = JSON.parse(serialized.events!.stop);
+    expect(eventObj.once).toBe(true);
+    expect(eventObj.when).toContain('s.x > 10');
+  });
+
+  test('handles model without events', () => {
+    const model = {
+      state: { x: 0 },
+      params: {},
+      derivatives: { x: (s: any) => 1 }
+    };
+
+    const serialized = serializeModel(model);
+    expect(serialized.events).toBeUndefined();
+  });
+});
+
+describe('Parameters Serialization', () => {
+  test('serializes slider controls', () => {
+    const params = {
+      speed: {
+        type: 'slider' as const,
+        min: 0,
+        max: 10,
+        default: 5,
+        step: 0.1,
+        label: 'Speed'
+      }
+    };
+
+    const serialized = serializeParams(params);
+
+    expect(serialized.speed).toEqual({
+      type: 'slider',
+      min: 0,
+      max: 10,
+      default: 5,
+      step: 0.1,
+      label: 'Speed',
+      scale: undefined
+    });
+  });
+
+  test('serializes checkbox controls', () => {
+    const params = {
+      enabled: {
+        type: 'checkbox' as const,
+        default: true,
+        label: 'Enabled'
+      }
+    };
+
+    const serialized = serializeParams(params);
+
+    expect(serialized.enabled).toEqual({
+      type: 'checkbox',
+      default: true,
+      label: 'Enabled'
+    });
+  });
+
+  test('handles empty params', () => {
+    const serialized = serializeParams(undefined);
+    expect(serialized).toEqual({});
+  });
+
+  test('uses key as label fallback', () => {
+    const params = {
+      speed: {
+        type: 'slider' as const,
+        min: 0,
+        max: 10,
+        default: 5
+      }
+    };
+
+    const serialized = serializeParams(params);
+    expect(serialized.speed.label).toBe('speed');
+  });
+
+  test('applies default step for sliders', () => {
+    const params = {
+      speed: {
+        type: 'slider' as const,
+        min: 0,
+        max: 10,
+        default: 5
+      }
+    };
+
+    const serialized = serializeParams(params);
+    expect(serialized.speed.step).toBe(0.01);
+  });
+});
+
+describe('Timeline Serialization', () => {
+  test('serializes timeline with multiple states', () => {
+    const timeline = {
+      times: [0, 1, 2],
+      states: {
+        x: [0, 1, 2],
+        y: [0, 2, 4]
+      }
+    };
+
+    const serialized = serializeTimeline(timeline);
+
+    expect(serialized.times).toEqual([0, 1, 2]);
+    expect(serialized.states).toEqual({
+      x: [0, 1, 2],
+      y: [0, 2, 4]
+    });
+  });
+
+  test('handles empty timeline', () => {
+    const timeline = {
+      times: [],
+      states: {}
+    };
+
+    const serialized = serializeTimeline(timeline);
+    expect(serialized.times).toEqual([]);
+    expect(serialized.states).toEqual({});
+  });
+});
+
+describe('Deserialization', () => {
+  describe('deserializeParams', () => {
+    test('converts slider defaults to values', () => {
+      const serialized = {
+        speed: { type: 'slider' as const, min: 0, max: 10, default: 5, label: 'Speed' }
+      };
+
+      const params = deserializeParams(serialized);
+      expect(params.speed).toBe(5);
+    });
+
+    test('converts checkbox defaults to 0/1', () => {
+      const serialized = {
+        enabled: { type: 'checkbox' as const, default: true, label: 'Enabled' },
+        disabled: { type: 'checkbox' as const, default: false, label: 'Disabled' }
+      };
+
+      const params = deserializeParams(serialized);
+      expect(params.enabled).toBe(1);
+      expect(params.disabled).toBe(0);
+    });
+
+    test('handles mixed control types', () => {
+      const serialized = {
+        speed: { type: 'slider' as const, min: 0, max: 10, default: 5, label: 'Speed' },
+        enabled: { type: 'checkbox' as const, default: true, label: 'Enabled' }
+      };
+
+      const params = deserializeParams(serialized);
+      expect(params).toEqual({ speed: 5, enabled: 1 });
+    });
+  });
+
+  describe('deserializeFunctions', () => {
+    test('deserializes arrow function expressions', () => {
+      const serialized = {
+        dx: '(state, params) => state.vx'
+      };
+
+      const functions = deserializeFunctions(serialized);
+      expect(functions.dx({ vx: 5 }, {})).toBe(5);
+    });
+
+    test('deserializes regular functions', () => {
+      const serialized = {
+        dx: 'function(state, params) { return state.vx; }'
+      };
+
+      const functions = deserializeFunctions(serialized);
+      expect(functions.dx({ vx: 5 }, {})).toBe(5);
+    });
+
+    test('wraps simple expressions in arrow function', () => {
+      const serialized = {
+        dx: 'state.vx * 2'
+      };
+
+      const functions = deserializeFunctions(serialized);
+      expect(functions.dx({ vx: 5 }, {})).toBe(10);
+    });
+
+    test('handles invalid function with fallback', () => {
+      const serialized = {
+        dx: 'this is not valid JS'
+      };
+
+      const functions = deserializeFunctions(serialized);
+      expect(functions.dx()).toBe(0); // fallback function
+    });
+  });
+
+  describe('deserializeEvents', () => {
+    test('deserializes event with when/then', () => {
+      const serialized = {
+        stop: JSON.stringify({
+          when: '(s) => s.x > 10',
+          then: '(s) => ({ ...s, x: 0 })',
+          once: true
+        })
+      };
+
+      const events = deserializeEvents(serialized);
+      
+      expect(events.stop.when({ x: 15 })).toBe(true);
+      expect(events.stop.when({ x: 5 })).toBe(false);
+      expect(events.stop.then({ x: 15 })).toEqual({ x: 0 });
+      expect(events.stop.once).toBe(true);
+    });
+
+    test('defaults once to false', () => {
+      const serialized = {
+        reset: JSON.stringify({
+          when: '(s) => s.x > 10',
+          then: '(s) => ({ x: 0 })'
+        })
+      };
+
+      const events = deserializeEvents(serialized);
+      expect(events.reset.once).toBe(false);
+    });
+
+    test('handles invalid JSON gracefully', () => {
+      const serialized = {
+        bad: 'not valid json'
+      };
+
+      const events = deserializeEvents(serialized);
+      expect(events.bad).toBeUndefined();
+    });
+  });
+});
+
+describe('serializeFunctions', () => {
+  test('converts functions to strings', () => {
+    const obj = {
+      dx: (s: any) => s.vx,
+      dy: function(s: any) { return s.vy; }
+    };
+
+    const serialized = serializeFunctions(obj);
+
+    expect(serialized.dx).toContain('s.vx');
+    expect(serialized.dy).toContain('s.vy');
+  });
+
+  test('converts non-function values to strings', () => {
+    const obj = {
+      value: 42,
+      name: 'test'
+    };
+
+    const serialized = serializeFunctions(obj);
+
+    expect(serialized.value).toBe('42');
+    expect(serialized.name).toBe('test');
+  });
+
+  test('skips undefined and null values', () => {
+    const obj = {
+      valid: (x: number) => x,
+      invalid: undefined,
+      nul: null
+    };
+
+    const serialized = serializeFunctions(obj);
+
+    expect(serialized.valid).toBeDefined();
+    expect(serialized.invalid).toBeUndefined();
+    expect(serialized.nul).toBeUndefined();
+  });
+});
+
+describe('serializeEvents', () => {
+  test('serializes valid events', () => {
+    const events = {
+      stop: {
+        when: (s: any) => s.x > 10,
+        then: (s: any) => ({ ...s, x: 0 }),
+        once: true
+      }
+    };
+
+    const serialized = serializeEvents(events);
+    const parsed = JSON.parse(serialized.stop);
+
+    expect(parsed.when).toContain('s.x > 10');
+    expect(parsed.then).toContain('s, x: 0');
+    expect(parsed.once).toBe(true);
+  });
+
+  test('handles invalid events with warning', () => {
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    
+    const events = {
+      invalid: {
+        when: 'not a function',
+        then: (s: any) => s
+      }
+    };
+
+    const serialized = serializeEvents(events);
+    
+    expect(serialized.invalid).toBeUndefined();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Invalid event invalid')
+    );
+    
+    consoleSpy.mockRestore();
   });
 });

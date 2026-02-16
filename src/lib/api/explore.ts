@@ -5,12 +5,11 @@
 
 import type { Model, Params, State } from '../../core/types';
 import { serializeModel, serializeParams } from '../../simulation/serialization';
-import { renderToHTML } from '../utils/renderToHTML';
-import { displayHTML } from '../utils/displayHTML';
-import { loadClientBundle } from '../utils/bundleLoader';
+import { render } from '../rendering';
 import { ViewBuilder } from '../builders/ViewBuilder';
 import { Control } from '../controls';
 import { DEFAULT_CONFIG } from '../config/defaults';
+import { getTargetWithFallback } from './defaultTarget';
 
 export interface ExploreConfig {
   /** Interactive parameter controls (sliders, checkboxes) */
@@ -64,6 +63,36 @@ export async function explore(
   const { params = {}, initial, timeRange, timeStep, view: viewFn } = config;
   const { width, height, target } = options;
 
+  // Use model.state as default if no initial state provided
+  const initialState = initial || ((p: Params) => {
+    const merged = { ...model.state };
+    const stateKeys = Object.keys(model.state);
+    
+    stateKeys.forEach(key => {
+      if (key in p) {
+        merged[key] = p[key];
+      }
+    });
+    
+    return merged;
+  });
+
+  // If we created the auto function, embed the actual state values
+  const serializedInitial = initial 
+    ? initial.toString()
+    : Function('p', `
+      const merged = ${JSON.stringify(model.state)};
+      const stateKeys = ${JSON.stringify(Object.keys(model.state))};
+      
+      stateKeys.forEach(key => {
+        if (key in p) {
+          merged[key] = p[key];
+        }
+      });
+      
+      return merged;
+    `).toString();
+
   // Handle single or multiple view functions
   const viewFunctions = Array.isArray(viewFn) ? viewFn : [viewFn];
 
@@ -83,12 +112,11 @@ export async function explore(
     type: 'explore' as const,
     model: serializeModel(model),
     params: serializeParams(params),
-    initial: initial?.toString() || '',
+    initial: serializedInitial,
     views: views,
     options: { timeRange, timeStep, width, height }
   };
 
-  const clientBundle = await loadClientBundle();
-  const html = renderToHTML(descriptor, clientBundle);
-  await displayHTML(html, target);
+  const finalTarget = getTargetWithFallback(target);
+  await render(descriptor, { width, height, target: finalTarget });
 }
